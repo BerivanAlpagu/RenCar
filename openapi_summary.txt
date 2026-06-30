@@ -1,0 +1,174 @@
+=== PATHS ===
+[GET] /health - Servis sağlık kontrolü (probe için)
+[POST] /auth/register - Yeni kullanıcı kaydı
+[POST] /auth/login - Giriş yap
+[POST] /auth/refresh - Token yenile (rotation)
+[POST] /auth/logout - Çıkış yap
+[GET] /auth/me - Mevcut kullanıcı bilgisi
+[GET] /admin/ping - Admin test endpoint
+[GET] /customer/ping - Customer test endpoint
+[POST] /license/upload - Ehliyet yükle (ön + arka)
+[GET] /license/status - Ehliyet durumumu getir
+[GET] /admin/licenses - Ehliyetleri listele
+[GET] /admin/licenses/{id} - Ehliyet detayı
+[PATCH] /admin/licenses/{id}/approve - Ehliyeti onayla
+[PATCH] /admin/licenses/{id}/reject - Ehliyeti reddet
+[POST] /admin/vehicles - Araç oluştur
+[GET] /admin/vehicles - Araçları listele (tümü)
+[GET] /admin/vehicles/{id} - Araç detayı
+[PATCH] /admin/vehicles/{id} - Aracı güncelle
+[DELETE] /admin/vehicles/{id} - Aracı sil
+[GET] /vehicles - Müsait araçları listele
+[GET] /vehicles/{id} - Müsait araç detayı
+[POST] /rentals - Araç kirala (anlık)
+[GET] /rentals - Kiralamalarım
+[POST] /rentals/{id}/return - Kiralamayı iade et
+[GET] /rentals/{id} - Kiralamam (detay)
+[GET] /admin/rentals - Kiralamaları listele (tümü)
+[GET] /admin/rentals/{id} - Kiralama detayı
+[GET] /admin/locations - Anlık araç konumları (snapshot)
+
+=== COMPONENTS (SCHEMAS) ===
+
+RegisterDto:
+  - email: string
+  - password: string
+  - fullName: string
+  - phone: string
+
+UserResponseDto:
+  - id: string
+  - email: string
+  - phone: object
+  - fullName: string
+  - role: string
+  - createdAt: string
+  - updatedAt: string
+
+AuthResponseDto:
+  - accessToken: string
+  - refreshToken: string
+  - user: ref
+
+LoginDto:
+  - email: string
+  - password: string
+
+RefreshTokenDto:
+  - refreshToken: string
+
+MessageResponseDto:
+  - message: string
+
+UploadLicenseDto:
+  - front: string
+  - back: string
+
+LicenseResponseDto:
+  - id: string
+  - status: string
+  - frontImageUrl: string
+  - backImageUrl: string
+  - rejectReason: object
+  - reviewedAt: object
+  - createdAt: string
+  - updatedAt: string
+
+LicenseStatusResponseDto:
+  - status: string
+  - frontImageUrl: object
+  - backImageUrl: object
+  - rejectReason: object
+  - reviewedAt: object
+
+AdminLicenseResponseDto:
+  - id: string
+  - userId: string
+  - status: string
+  - frontImageUrl: string
+  - backImageUrl: string
+  - rejectReason: object
+  - reviewedAt: object
+  - createdAt: string
+  - updatedAt: string
+  - user: ref
+
+RejectLicenseDto:
+  - reason: string
+
+CreateVehicleDto:
+  - plate: string
+  - brand: string
+  - model: string
+  - type: string
+  - pricePerDay: number
+  - latitude: number
+  - longitude: number
+  - status: string
+
+VehicleResponseDto:
+  - id: string
+  - plate: string
+  - brand: string
+  - model: string
+  - type: string
+  - pricePerDay: number
+  - status: string
+  - latitude: number
+  - longitude: number
+  - createdAt: string
+  - updatedAt: string
+
+UpdateVehicleDto:
+  - plate: string
+  - brand: string
+  - model: string
+  - type: string
+  - pricePerDay: number
+  - latitude: number
+  - longitude: number
+  - status: string
+
+CreateRentalDto:
+  - vehicleId: string
+  - endDate: string
+
+RentalResponseDto:
+  - id: string
+  - userId: string
+  - vehicleId: string
+  - startDate: string
+  - endDate: string
+  - totalPrice: number
+  - status: string
+  - createdAt: string
+
+RentalUserSummary:
+  - id: string
+  - email: string
+  - fullName: string
+
+RentalVehicleSummary:
+  - id: string
+  - plate: string
+  - brand: string
+  - model: string
+  - status: string
+
+AdminRentalResponseDto:
+  - id: string
+  - startDate: string
+  - endDate: string
+  - totalPrice: number
+  - status: string
+  - createdAt: string
+  - user: ref
+  - vehicle: ref
+
+VehiclePositionDto:
+  - vehicleId: string
+  - plate: string
+  - status: string
+  - latitude: number
+  - longitude: number
+  - updatedAt: string
