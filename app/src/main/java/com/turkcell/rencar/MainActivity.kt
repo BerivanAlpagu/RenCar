@@ -1,6 +1,7 @@
 package com.turkcell.rencar
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,9 +20,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.turkcell.rencar.ui.auth.AuthViewModel
+import com.turkcell.rencar.ui.auth.LoginScreen
+import com.turkcell.rencar.ui.auth.OtpVerificationScreen
+import com.turkcell.rencar.ui.auth.RegisterScreen
 import com.turkcell.rencar.ui.navigation.Screen
 import com.turkcell.rencar.ui.onboarding.OnboardingScreen
 import com.turkcell.rencar.ui.splash.SplashViewModel
@@ -32,6 +39,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val splashViewModel: SplashViewModel by viewModels()
+    private val authViewModel: AuthViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +48,26 @@ class MainActivity : ComponentActivity() {
             RenCarTheme {
                 val navController = rememberNavController()
                 val splashState by splashViewModel.state.collectAsState()
+                val context = LocalContext.current
+
+                // Listen to AuthEvents
+                LaunchedEffect(Unit) {
+                    authViewModel.events.collect { event ->
+                        when (event) {
+                            is AuthViewModel.AuthEvent.NavigateToOtp -> {
+                                navController.navigate(Screen.Otp(event.phone))
+                            }
+                            is AuthViewModel.AuthEvent.NavigateToHome -> {
+                                navController.navigate(Screen.Home) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                            is AuthViewModel.AuthEvent.ShowError -> {
+                                Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                }
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(
@@ -86,11 +114,47 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable<Screen.Login> {
-                            DummyPlaceholderScreen("Login Screen (Giriş Yap)")
+                            LoginScreen(
+                                viewModel = authViewModel,
+                                onBackClick = {
+                                    navController.navigateUp()
+                                },
+                                onRegisterClick = {
+                                    navController.navigate(Screen.Register) {
+                                        popUpTo(Screen.Login) { inclusive = true }
+                                    }
+                                }
+                            )
                         }
 
                         composable<Screen.Register> {
-                            DummyPlaceholderScreen("Register Screen (Kayıt Ol / Hemen Başla)")
+                            RegisterScreen(
+                                viewModel = authViewModel,
+                                onBackClick = {
+                                    navController.navigateUp()
+                                },
+                                onLoginClick = {
+                                    navController.navigate(Screen.Login) {
+                                        popUpTo(Screen.Register) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable<Screen.Otp> { backStackEntry ->
+                            val route = backStackEntry.toRoute<Screen.Otp>()
+                            OtpVerificationScreen(
+                                phone = route.phone,
+                                viewModel = authViewModel,
+                                onBackClick = {
+                                    navController.navigateUp()
+                                },
+                                onChangePhoneClick = {
+                                    navController.navigate(Screen.Login) {
+                                        popUpTo(Screen.Otp::class) { inclusive = true }
+                                    }
+                                }
+                            )
                         }
 
                         composable<Screen.Home> {
