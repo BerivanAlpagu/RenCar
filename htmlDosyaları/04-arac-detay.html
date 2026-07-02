@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rencar — Araç Detay (Bottom Sheet)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 60px 40px;
+    background: #F3F5F8;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    color: #101620;
+    margin: 0 0 32px;
+  }
+  .screens-row {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+<h1>04 · Araç Detay (Bottom Sheet)</h1>
+<div class="screens-row">
+<div style="width:376px;height:812px;border-radius:48px;background:#0B0E12;padding:8px;box-shadow:0 26px 60px rgba(16,24,40,.20);flex:0 0 auto;">
+<div data-screen-label="Vehicle Detail (Light)" style="position:relative;width:360px;height:796px;border-radius:40px;overflow:hidden;background:#E9EDF2;font-family:'Plus Jakarta Sans',sans-serif;">
+<svg height="360" preserveaspectratio="xMidYMid slice" style="position:absolute;inset:0;" viewbox="0 0 360 360" width="360"><rect fill="#E6EBF1" height="360" width="360"></rect><path d="M-20 120 L380 90" stroke="#fff" stroke-width="22"></path><path d="M120 -20 L150 380" stroke="#fff" stroke-width="18"></path><polygon fill="#D9EAD9" points="180,150 330,180 330,300 200,290"></polygon></svg>
+<div style="position:absolute;inset:0;background:rgba(16,24,40,.42);"></div>
+<div style="height:42px;position:relative;display:flex;align-items:center;justify-content:space-between;padding:0 24px 0 26px;color:#fff;">
+<span style="font-weight:700;font-size:14px;">9:41</span>
+<div style="display:flex;align-items:center;gap:7px;"><svg fill="currentColor" height="12" viewbox="0 0 18 12" width="18"><rect height="5" rx="1" width="3" x="0" y="7"></rect><rect height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect height="10" rx="1" width="3" x="10" y="2"></rect><rect height="12" rx="1" width="3" x="15" y="0"></rect></svg><svg fill="none" height="12" viewbox="0 0 24 24" width="17"><path d="M12 18.5h.01M5.5 13.5a9 9 0 0 1 13 0M9 16.5a4.6 4.6 0 0 1 6 0M2.5 10.5a14 14 0 0 1 19 0" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg><svg fill="none" height="13" viewbox="0 0 26 13" width="26"><rect height="11" rx="3" stroke="currentColor" stroke-width="1.4" width="21" x="1" y="1"></rect><rect fill="currentColor" height="7" rx="1.5" width="15" x="3" y="3"></rect><rect fill="currentColor" height="4" rx="1" width="2" x="23.5" y="4.5"></rect></svg></div>
+</div>
+<div style="position:absolute;top:54px;left:18px;width:42px;height:42px;border-radius:13px;background:#fff;box-shadow:0 6px 16px rgba(16,24,40,.2);display:flex;align-items:center;justify-content:center;"><svg fill="none" height="22" viewbox="0 0 24 24" width="22"><path d="M15 6l-6 6 6 6" stroke="#141A22" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path></svg></div>
+<div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:30px 30px 40px 40px;padding:14px 22px 30px;box-shadow:0 -14px 40px rgba(16,24,40,.2);">
+<div style="width:42px;height:5px;border-radius:3px;background:#E0E5EC;margin:0 auto 14px;"></div>
+<div style="display:flex;align-items:flex-start;justify-content:space-between;">
+<div><div style="display:flex;align-items:center;gap:8px;"><div style="font-family:'Sora',sans-serif;font-weight:700;font-size:21px;color:#101620;letter-spacing:-0.4px;">Renault Clio</div><span style="background:#E7F4EC;color:#1A9E63;font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px;">MÜSAİT</span></div><div style="font-size:13.5px;color:#5C6675;margin-top:4px;font-weight:600;letter-spacing:.5px;">34 RNC 022 · 250 m uzaklıkta</div></div>
+</div>
+<image-slot id="rencar-clio" placeholder="Araç fotoğrafı ekle" radius="20" shape="rounded" style="width:100%;height:128px;margin-top:14px;"></image-slot>
+<div style="display:flex;gap:10px;margin-top:14px;">
+<div style="flex:1;background:#F4F6F9;border-radius:16px;padding:12px;"><div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#5C6675;font-weight:600;"><svg fill="none" height="14" viewbox="0 0 24 24" width="14"><path d="M14 4H6a2 2 0 0 0-2 2v14h12V6a2 2 0 0 0-2-2Z" stroke="#5C6675" stroke-width="1.7"></path><path d="M4 9h10M16 9l3 2v6a2 2 0 0 1-4 0" stroke="#5C6675" stroke-linecap="round" stroke-width="1.7"></path></svg>Yakıt</div><div style="font-weight:800;font-size:17px;color:#101620;margin-top:5px;">%72</div><div style="height:5px;border-radius:3px;background:#E3E8EF;margin-top:7px;overflow:hidden;"><div style="width:72%;height:100%;background:#1FB370;border-radius:3px;"></div></div></div>
+<div style="flex:1;background:#F4F6F9;border-radius:16px;padding:12px;"><div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#5C6675;font-weight:600;"><svg fill="none" height="14" viewbox="0 0 24 24" width="14"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="#5C6675" stroke-width="1.7"></path><circle cx="12" cy="10" r="2.4" stroke="#5C6675" stroke-width="1.7"></circle></svg>Menzil</div><div style="font-weight:800;font-size:17px;color:#101620;margin-top:5px;">~480 km</div><div style="font-size:11px;color:#8A929E;margin-top:9px;font-weight:500;">Dolu depo</div></div>
+</div>
+<div style="display:flex;gap:10px;margin-top:10px;">
+<div style="flex:1;background:#F4F6F9;border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:9px;"><svg fill="none" height="18" viewbox="0 0 24 24" width="18"><path d="M6 4v16M6 9h7a3 3 0 0 1 3 3v0M18 4v16" stroke="#3A4452" stroke-linecap="round" stroke-width="1.8"></path><circle cx="6" cy="4" fill="#3A4452" r="1.6"></circle><circle cx="18" cy="4" fill="#3A4452" r="1.6"></circle></svg><div><div style="font-size:11px;color:#8A929E;font-weight:600;">Vites</div><div style="font-size:13.5px;color:#101620;font-weight:700;">Manuel</div></div></div>
+<div style="flex:1;background:#F4F6F9;border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:9px;"><svg fill="none" height="18" viewbox="0 0 24 24" width="18"><path d="M5 18v-3a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3M8 12V8a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4" stroke="#3A4452" stroke-linecap="round" stroke-width="1.8"></path></svg><div><div style="font-size:11px;color:#8A929E;font-weight:600;">Koltuk</div><div style="font-size:13.5px;color:#101620;font-weight:700;">5 kişi</div></div></div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid #EEF1F5;">
+<div><span style="font-family:'Sora',sans-serif;font-weight:800;font-size:24px;color:#101620;">₺4,50</span><span style="font-size:14px;color:#5C6675;font-weight:600;"> /dk</span></div>
+<div style="font-size:13px;color:#5C6675;font-weight:600;">Saatlik ₺180</div>
+</div>
+<div style="display:flex;gap:11px;margin-top:14px;">
+<div style="flex:0 0 130px;height:56px;border-radius:18px;border:1.7px solid #0B6BCB;color:#0B6BCB;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;">Rezerve Et</div>
+<div style="flex:1;height:56px;border-radius:18px;background:#0B6BCB;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15.5px;box-shadow:0 14px 26px rgba(11,107,203,.30);"><svg fill="none" height="20" viewbox="0 0 24 24" width="20"><rect height="9" rx="2" stroke="#fff" stroke-width="2" width="14" x="5" y="11"></rect><path d="M8 11V8a4 4 0 0 1 8 0" stroke="#fff" stroke-linecap="round" stroke-width="2"></path></svg>Kilidi Aç</div>
+</div>
+</div>
+<div style="position:absolute;left:50%;transform:translateX(-50%);bottom:9px;width:128px;height:5px;border-radius:3px;background:rgba(20,26,34,.20);z-index:2;"></div>
+</div>
+</div>
+
+<div style="width:376px;height:812px;border-radius:48px;background:#000;padding:8px;box-shadow:0 26px 60px rgba(16,24,40,.30);flex:0 0 auto;">
+<div data-screen-label="Vehicle Detail (Dark)" style="position:relative;width:360px;height:796px;border-radius:40px;overflow:hidden;background:#10151B;font-family:'Plus Jakarta Sans',sans-serif;">
+<svg height="360" preserveaspectratio="xMidYMid slice" style="position:absolute;inset:0;" viewbox="0 0 360 360" width="360"><rect fill="#11161D" height="360" width="360"></rect><path d="M-20 120 L380 90" stroke="#222A33" stroke-width="22"></path><path d="M120 -20 L150 380" stroke="#222A33" stroke-width="18"></path><polygon fill="#16271C" points="180,150 330,180 330,300 200,290"></polygon></svg>
+<div style="position:absolute;inset:0;background:rgba(4,7,11,.55);"></div>
+<div style="height:42px;position:relative;display:flex;align-items:center;justify-content:space-between;padding:0 24px 0 26px;color:#fff;">
+<span style="font-weight:700;font-size:14px;">9:41</span>
+<div style="display:flex;align-items:center;gap:7px;"><svg fill="currentColor" height="12" viewbox="0 0 18 12" width="18"><rect height="5" rx="1" width="3" x="0" y="7"></rect><rect height="7.5" rx="1" width="3" x="5" y="4.5"></rect><rect height="10" rx="1" width="3" x="10" y="2"></rect><rect height="12" rx="1" width="3" x="15" y="0"></rect></svg><svg fill="none" height="12" viewbox="0 0 24 24" width="17"><path d="M12 18.5h.01M5.5 13.5a9 9 0 0 1 13 0M9 16.5a4.6 4.6 0 0 1 6 0M2.5 10.5a14 14 0 0 1 19 0" stroke="currentColor" stroke-linecap="round" stroke-width="2"></path></svg><svg fill="none" height="13" viewbox="0 0 26 13" width="26"><rect height="11" rx="3" stroke="currentColor" stroke-width="1.4" width="21" x="1" y="1"></rect><rect fill="currentColor" height="7" rx="1.5" width="15" x="3" y="3"></rect><rect fill="currentColor" height="4" rx="1" width="2" x="23.5" y="4.5"></rect></svg></div>
+</div>
+<div style="position:absolute;top:54px;left:18px;width:42px;height:42px;border-radius:13px;background:#1A212A;border:1px solid #252D38;display:flex;align-items:center;justify-content:center;"><svg fill="none" height="22" viewbox="0 0 24 24" width="22"><path d="M15 6l-6 6 6 6" stroke="#EAEEF3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path></svg></div>
+<div style="position:absolute;left:0;right:0;bottom:0;background:#171C24;border-radius:30px 30px 40px 40px;padding:14px 22px 30px;box-shadow:0 -14px 40px rgba(0,0,0,.5);border-top:1px solid #232A33;">
+<div style="width:42px;height:5px;border-radius:3px;background:#2C333D;margin:0 auto 14px;"></div>
+<div style="display:flex;align-items:flex-start;justify-content:space-between;">
+<div><div style="display:flex;align-items:center;gap:8px;"><div style="font-family:'Sora',sans-serif;font-weight:700;font-size:21px;color:#F3F6FA;letter-spacing:-0.4px;">Renault Clio</div><span style="background:#173726;color:#34C98A;font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px;">MÜSAİT</span></div><div style="font-size:13.5px;color:#98A2B0;margin-top:4px;font-weight:600;letter-spacing:.5px;">34 RNC 022 · 250 m uzaklıkta</div></div>
+</div>
+<image-slot id="rencar-clio-dark" placeholder="Araç fotoğrafı ekle" radius="20" shape="rounded" style="width:100%;height:128px;margin-top:14px;"></image-slot>
+<div style="display:flex;gap:10px;margin-top:14px;">
+<div style="flex:1;background:#1F262F;border-radius:16px;padding:12px;"><div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#98A2B0;font-weight:600;"><svg fill="none" height="14" viewbox="0 0 24 24" width="14"><path d="M14 4H6a2 2 0 0 0-2 2v14h12V6a2 2 0 0 0-2-2Z" stroke="#98A2B0" stroke-width="1.7"></path><path d="M4 9h10M16 9l3 2v6a2 2 0 0 1-4 0" stroke="#98A2B0" stroke-linecap="round" stroke-width="1.7"></path></svg>Yakıt</div><div style="font-weight:800;font-size:17px;color:#F3F6FA;margin-top:5px;">%72</div><div style="height:5px;border-radius:3px;background:#2C333D;margin-top:7px;overflow:hidden;"><div style="width:72%;height:100%;background:#34C98A;border-radius:3px;"></div></div></div>
+<div style="flex:1;background:#1F262F;border-radius:16px;padding:12px;"><div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#98A2B0;font-weight:600;"><svg fill="none" height="14" viewbox="0 0 24 24" width="14"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="#98A2B0" stroke-width="1.7"></path><circle cx="12" cy="10" r="2.4" stroke="#98A2B0" stroke-width="1.7"></circle></svg>Menzil</div><div style="font-weight:800;font-size:17px;color:#F3F6FA;margin-top:5px;">~480 km</div><div style="font-size:11px;color:#7A828F;margin-top:9px;font-weight:500;">Dolu depo</div></div>
+</div>
+<div style="display:flex;gap:10px;margin-top:10px;">
+<div style="flex:1;background:#1F262F;border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:9px;"><svg fill="none" height="18" viewbox="0 0 24 24" width="18"><path d="M6 4v16M6 9h7a3 3 0 0 1 3 3v0M18 4v16" stroke="#B6BFCB" stroke-linecap="round" stroke-width="1.8"></path><circle cx="6" cy="4" fill="#B6BFCB" r="1.6"></circle><circle cx="18" cy="4" fill="#B6BFCB" r="1.6"></circle></svg><div><div style="font-size:11px;color:#7A828F;font-weight:600;">Vites</div><div style="font-size:13.5px;color:#F3F6FA;font-weight:700;">Manuel</div></div></div>
+<div style="flex:1;background:#1F262F;border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:9px;"><svg fill="none" height="18" viewbox="0 0 24 24" width="18"><path d="M5 18v-3a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v3M8 12V8a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4" stroke="#B6BFCB" stroke-linecap="round" stroke-width="1.8"></path></svg><div><div style="font-size:11px;color:#7A828F;font-weight:600;">Koltuk</div><div style="font-size:13.5px;color:#F3F6FA;font-weight:700;">5 kişi</div></div></div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid #232A33;">
+<div><span style="font-family:'Sora',sans-serif;font-weight:800;font-size:24px;color:#F3F6FA;">₺4,50</span><span style="font-size:14px;color:#98A2B0;font-weight:600;"> /dk</span></div>
+<div style="font-size:13px;color:#98A2B0;font-weight:600;">Saatlik ₺180</div>
+</div>
+<div style="display:flex;gap:11px;margin-top:14px;">
+<div style="flex:0 0 130px;height:56px;border-radius:18px;border:1.7px solid #4C95F0;color:#4C95F0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;">Rezerve Et</div>
+<div style="flex:1;height:56px;border-radius:18px;background:#0B6BCB;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15.5px;box-shadow:0 14px 30px rgba(11,107,203,.45);"><svg fill="none" height="20" viewbox="0 0 24 24" width="20"><rect height="9" rx="2" stroke="#fff" stroke-width="2" width="14" x="5" y="11"></rect><path d="M8 11V8a4 4 0 0 1 8 0" stroke="#fff" stroke-linecap="round" stroke-width="2"></path></svg>Kilidi Aç</div>
+</div>
+</div>
+<div style="position:absolute;left:50%;transform:translateX(-50%);bottom:9px;width:128px;height:5px;border-radius:3px;background:rgba(234,238,243,.24);z-index:2;"></div>
+</div>
+</div>
+</div>
+</body>
+</html>
