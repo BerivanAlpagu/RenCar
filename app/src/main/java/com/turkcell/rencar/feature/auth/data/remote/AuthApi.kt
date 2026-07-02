@@ -1,4 +1,4 @@
-package com.turkcell.rencar.data.api
+package com.turkcell.rencar.feature.auth.data.remote
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -23,10 +23,6 @@ data class UserResponseDto(
     val updatedAt: String
 )
 
-// Wait, let's look at lines 1381-1410 in openapi.json.
-// "password": { "type": "string", "description": "Parola..." }
-// So password is a simple string.
-// Let's rewrite RegisterDto:
 @Serializable
 data class UserRegisterDto(
     val email: String,

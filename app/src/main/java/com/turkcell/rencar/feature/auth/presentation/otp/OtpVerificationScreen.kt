@@ -1,4 +1,4 @@
-package com.turkcell.rencar.ui.auth
+package com.turkcell.rencar.feature.auth.presentation.otp
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -26,8 +26,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.turkcell.rencar.ui.theme.PlusJakartaSans
-import com.turkcell.rencar.ui.theme.Sora
+import com.turkcell.rencar.core.designsystem.PlusJakartaSans
+import com.turkcell.rencar.core.designsystem.Sora
+import com.turkcell.rencar.feature.auth.presentation.AuthViewModel
 
 @Composable
 fun OtpVerificationScreen(
@@ -44,13 +45,15 @@ fun OtpVerificationScreen(
     val cardBgColor = if (isDarkTheme) Color(0xFF1B212A) else Color(0xFFF1F4F8)
     val strokeColor = if (isDarkTheme) Color(0xFF2A313B) else Color(0xFFE3E8EF)
     val accentColor = if (isDarkTheme) Color(0xFF4C95F0) else Color(0xFF0B6BCB)
+    
+    // OTP Specific
+    val iconBgColor = if (isDarkTheme) Color(0xFF14233A) else Color(0xFFEAF2FC)
     val activeBoxBg = if (isDarkTheme) Color(0xFF14233A) else Color(0xFFF7FAFE)
-    val timerRowColor = if (isDarkTheme) Color(0xFF7A828F) else Color(0xFF8A929E)
+    val timerRowIconColor = if (isDarkTheme) Color(0xFF7A828F) else Color(0xFF8A929E)
 
     var code by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
 
-    // Pulse cursor animation
     val infiniteTransition = rememberInfiniteTransition(label = "cursor")
     val cursorAlpha by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -65,7 +68,6 @@ fun OtpVerificationScreen(
         label = "cursorAlpha"
     )
 
-    // Request keyboard focus immediately
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
@@ -76,15 +78,13 @@ fun OtpVerificationScreen(
             .background(backgroundColor)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 28.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 14.dp, start = 28.dp, end = 28.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Back button
             Box(
                 modifier = Modifier
                     .size(42.dp)
@@ -100,25 +100,19 @@ fun OtpVerificationScreen(
                 )
             }
 
-            // SMS Symbol Box
             Spacer(modifier = Modifier.height(26.dp))
+            
             Box(
                 modifier = Modifier
                     .size(60.dp)
-                    .background(
-                        if (isDarkTheme) Color(0xFF14233A) else Color(0xFFEAF2FC),
-                        RoundedCornerShape(18.dp)
-                    ),
+                    .background(iconBgColor, RoundedCornerShape(18.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                // SMS phone checking symbol
-                Text(
-                    text = "📲",
-                    fontSize = 28.sp
-                )
+                Text(text = "✉️", fontSize = 28.sp)
             }
 
             Spacer(modifier = Modifier.height(22.dp))
+            
             Text(
                 text = "Telefonunu doğrula",
                 fontFamily = Sora,
@@ -129,12 +123,19 @@ fun OtpVerificationScreen(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                wrapAlternativeRow = true
-            ) {
+            
+            // Subtitle with bold phone
+            Row(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "$phone numarasına gönderdiğimiz 6 haneli kodu gir.",
+                    text = "$phone ",
+                    fontFamily = PlusJakartaSans,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.5.sp,
+                    color = textPrimaryColor,
+                    lineHeight = 22.sp
+                )
+                Text(
+                    text = "numarasına gönderdiğimiz 6 haneli kodu gir.",
                     fontFamily = PlusJakartaSans,
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.5.sp,
@@ -145,7 +146,6 @@ fun OtpVerificationScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // Hidden BasicTextField for receiving input
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
@@ -161,11 +161,10 @@ fun OtpVerificationScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     modifier = Modifier
                         .focusRequester(focusRequester)
-                        .size(1.dp), // keep it tiny & hidden
+                        .size(1.dp),
                     decorationBox = { it() }
                 )
 
-                // Visual boxes
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -190,7 +189,6 @@ fun OtpVerificationScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             if (isFocused) {
-                                // Blinking Cursor
                                 Box(
                                     modifier = Modifier
                                         .width(2.dp)
@@ -201,7 +199,7 @@ fun OtpVerificationScreen(
                                 Text(
                                     text = char,
                                     fontFamily = Sora,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.ExtraBold,
                                     fontSize = 24.sp,
                                     color = textPrimaryColor,
                                     textAlign = TextAlign.Center
@@ -214,17 +212,13 @@ fun OtpVerificationScreen(
 
             Spacer(modifier = Modifier.height(22.dp))
 
-            // Countdown timer row
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable(enabled = viewModel.timerSeconds == 0) {
-                    viewModel.login(phone) // Resend code
+                    viewModel.login(phone)
                 }
             ) {
-                Text(
-                    text = "⏰  ",
-                    fontSize = 16.sp
-                )
+                Text(text = "🔄 ", fontSize = 14.sp)
                 Text(
                     text = if (viewModel.timerSeconds > 0) {
                         "Kodu tekrar gönder · "
@@ -234,7 +228,7 @@ fun OtpVerificationScreen(
                     fontFamily = PlusJakartaSans,
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp,
-                    color = timerRowColor
+                    color = timerRowIconColor
                 )
                 if (viewModel.timerSeconds > 0) {
                     val minutes = viewModel.timerSeconds / 60
@@ -252,7 +246,6 @@ fun OtpVerificationScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Confirm Button
             Button(
                 onClick = { if (code.length == 6) viewModel.verifyOtp(phone, code) },
                 modifier = Modifier
@@ -261,7 +254,7 @@ fun OtpVerificationScreen(
                     .shadow(
                         elevation = 14.dp,
                         shape = RoundedCornerShape(18.dp),
-                        spotColor = Color(0xFF0B6BCB)
+                        spotColor = Color(0xFF0B6BCB).copy(alpha = 0.3f)
                     ),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -282,12 +275,12 @@ fun OtpVerificationScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.weight(1f))
 
-            // Change number row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(bottom = 28.dp)
                     .clickable { onChangePhoneClick() },
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -308,20 +301,4 @@ fun OtpVerificationScreen(
             }
         }
     }
-}
-
-@Composable
-private fun Row(
-    modifier: Modifier = Modifier,
-    wrapAlternativeRow: Boolean = false,
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    verticalAlignment: Alignment.Vertical = Alignment.Top,
-    content: @Composable RowScope.() -> Unit
-) {
-    androidx.compose.foundation.layout.Row(
-        modifier = modifier,
-        horizontalArrangement = horizontalArrangement,
-        verticalAlignment = verticalAlignment,
-        content = content
-    )
 }

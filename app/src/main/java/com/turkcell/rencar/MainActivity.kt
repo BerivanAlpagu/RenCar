@@ -37,14 +37,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.turkcell.rencar.ui.auth.AuthViewModel
-import com.turkcell.rencar.ui.auth.LoginScreen
-import com.turkcell.rencar.ui.auth.OtpVerificationScreen
-import com.turkcell.rencar.ui.auth.RegisterScreen
-import com.turkcell.rencar.ui.navigation.Screen
-import com.turkcell.rencar.ui.onboarding.OnboardingScreen
-import com.turkcell.rencar.ui.splash.SplashViewModel
-import com.turkcell.rencar.ui.theme.RenCarTheme
+import com.turkcell.rencar.app.navigation.Screen
+import com.turkcell.rencar.core.designsystem.RenCarTheme
+import com.turkcell.rencar.feature.auth.presentation.AuthViewModel
+import com.turkcell.rencar.feature.auth.presentation.login.LoginScreen
+import com.turkcell.rencar.feature.auth.presentation.otp.OtpVerificationScreen
+import com.turkcell.rencar.feature.auth.presentation.register.RegisterScreen
+import com.turkcell.rencar.feature.auth.presentation.onboarding.OnboardingScreen
+import com.turkcell.rencar.feature.auth.presentation.splash.SplashViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -62,7 +62,6 @@ class MainActivity : ComponentActivity() {
                 val splashState by splashViewModel.state.collectAsState()
                 val context = LocalContext.current
 
-                // Listen to AuthEvents
                 LaunchedEffect(Unit) {
                     authViewModel.events.collect { event ->
                         when (event) {

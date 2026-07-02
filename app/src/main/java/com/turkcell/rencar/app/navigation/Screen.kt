@@ -1,4 +1,4 @@
-package com.turkcell.rencar.ui.navigation
+package com.turkcell.rencar.app.navigation
 
 import kotlinx.serialization.Serializable
 

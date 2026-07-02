@@ -1,15 +1,15 @@
-package com.turkcell.rencar.ui.auth
+package com.turkcell.rencar.feature.auth.presentation
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.turkcell.rencar.data.api.AuthApi
-import com.turkcell.rencar.data.api.UserRegisterDto
-import com.turkcell.rencar.data.api.LoginDto
-import com.turkcell.rencar.data.api.VerifyOtpDto
-import com.turkcell.rencar.data.preferences.TokenManager
+import com.turkcell.rencar.feature.auth.data.remote.AuthApi
+import com.turkcell.rencar.feature.auth.data.remote.UserRegisterDto
+import com.turkcell.rencar.feature.auth.data.remote.LoginDto
+import com.turkcell.rencar.feature.auth.data.remote.VerifyOtpDto
+import com.turkcell.rencar.feature.auth.data.local.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -58,15 +58,28 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    private fun formatPhone(phone: String): String {
+        val cleanPhone = phone.replace(" ", "").replace("-", "")
+        return if (cleanPhone.startsWith("+90")) {
+            cleanPhone
+        } else if (cleanPhone.startsWith("90") && cleanPhone.length == 12) {
+            "+$cleanPhone"
+        } else if (cleanPhone.startsWith("0")) {
+            "+90${cleanPhone.substring(1)}"
+        } else {
+            "+90$cleanPhone"
+        }
+    }
+
     fun login(phone: String) {
+        val formattedPhone = formatPhone(phone)
         viewModelScope.launch {
             isLoading = true
             try {
-                // Call login API
-                authApi.login(LoginDto(phone = phone))
+                authApi.login(LoginDto(phone = formattedPhone))
                 isLoading = false
                 startOtpTimer()
-                _events.emit(AuthEvent.NavigateToOtp(phone))
+                _events.emit(AuthEvent.NavigateToOtp(formattedPhone))
             } catch (e: Exception) {
                 isLoading = false
                 val errorMsg = e.localizedMessage ?: "Giriş başarısız. Telefon numarası kayıtlı olmayabilir."
@@ -76,23 +89,22 @@ class AuthViewModel @Inject constructor(
     }
 
     fun register(fullName: String, email: String, phone: String, passwordPlain: String) {
+        val formattedPhone = formatPhone(phone)
         viewModelScope.launch {
             isLoading = true
             try {
-                // Register the user
                 authApi.register(
                     UserRegisterDto(
                         fullName = fullName,
                         email = email,
-                        phone = phone,
+                        phone = formattedPhone,
                         password = passwordPlain
                     )
                 )
-                // After registration, trigger OTP via login to force phone verification
-                authApi.login(LoginDto(phone = phone))
+                authApi.login(LoginDto(phone = formattedPhone))
                 isLoading = false
                 startOtpTimer()
-                _events.emit(AuthEvent.NavigateToOtp(phone))
+                _events.emit(AuthEvent.NavigateToOtp(formattedPhone))
             } catch (e: Exception) {
                 isLoading = false
                 val errorMsg = e.localizedMessage ?: "Kayıt sırasında bir hata oluştu."
@@ -102,10 +114,11 @@ class AuthViewModel @Inject constructor(
     }
 
     fun verifyOtp(phone: String, code: String) {
+        val formattedPhone = formatPhone(phone)
         viewModelScope.launch {
             isLoading = true
             try {
-                val response = authApi.verifyOtp(VerifyOtpDto(phone = phone, code = code))
+                val response = authApi.verifyOtp(VerifyOtpDto(phone = formattedPhone, code = code))
                 tokenManager.saveTokens(response.accessToken, response.refreshToken)
                 isLoading = false
                 _events.emit(AuthEvent.NavigateToHome)

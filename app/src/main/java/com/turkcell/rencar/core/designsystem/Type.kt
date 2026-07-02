@@ -1,4 +1,4 @@
-package com.turkcell.rencar.ui.theme
+package com.turkcell.rencar.core.designsystem
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
@@ -6,12 +6,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Map to system SansSerif to ensure out-of-the-box compatibility without manual OTF/TTF imports
 val PlusJakartaSans = FontFamily.SansSerif
 val Sora = FontFamily.SansSerif
 
 val Typography = Typography(
-    // Sora titles
     headlineLarge = TextStyle(
         fontFamily = Sora,
         fontWeight = FontWeight.ExtraBold,
@@ -26,7 +24,6 @@ val Typography = Typography(
         lineHeight = 32.sp,
         letterSpacing = 0.sp
     ),
-    // Plus Jakarta Sans bodies
     titleLarge = TextStyle(
         fontFamily = PlusJakartaSans,
         fontWeight = FontWeight.SemiBold,

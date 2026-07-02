@@ -1,7 +1,6 @@
-package com.turkcell.rencar.ui.theme
+package com.turkcell.rencar.core.designsystem
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin

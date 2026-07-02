@@ -1,6 +1,6 @@
-package com.turkcell.rencar.di
+package com.turkcell.rencar.app.di
 
-import com.turkcell.rencar.data.api.AuthApi
+import com.turkcell.rencar.feature.auth.data.remote.AuthApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

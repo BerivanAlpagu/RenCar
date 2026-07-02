@@ -1,4 +1,4 @@
-package com.turkcell.rencar.data.preferences
+package com.turkcell.rencar.feature.auth.data.local
 
 import android.content.Context
 import androidx.datastore.core.DataStore

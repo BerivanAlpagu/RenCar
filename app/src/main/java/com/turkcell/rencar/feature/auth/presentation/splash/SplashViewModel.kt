@@ -1,9 +1,9 @@
-package com.turkcell.rencar.ui.splash
+package com.turkcell.rencar.feature.auth.presentation.splash
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.turkcell.rencar.data.api.AuthApi
-import com.turkcell.rencar.data.preferences.TokenManager
+import com.turkcell.rencar.feature.auth.data.remote.AuthApi
+import com.turkcell.rencar.feature.auth.data.local.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,20 +39,16 @@ class SplashViewModel @Inject constructor(
                     _state.value = SplashState.NavigateToOnboarding
                 } else {
                     try {
-                        // Validate session with /auth/me
                         authApi.getMe("Bearer $token")
                         _state.value = SplashState.NavigateToHome
                     } catch (e: retrofit2.HttpException) {
                         if (e.code() == 401) {
-                            // Token expired or invalid → clear and go to onboarding
                             tokenManager.clearTokens()
                             _state.value = SplashState.NavigateToOnboarding
                         } else {
-                            // Server/network error → keep token, go home optimistically
                             _state.value = SplashState.NavigateToHome
                         }
                     } catch (e: Exception) {
-                        // Network error (no internet) → keep token, go home optimistically
                         _state.value = SplashState.NavigateToHome
                     }
                 }
