@@ -1,4 +1,4 @@
-package com.turkcell.rencar.ui.theme
+package com.turkcell.rencar.core.designsystem
 
 import android.app.Activity
 import android.os.Build
@@ -21,7 +21,7 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = TextPrimaryDark,
     error = ErrorRed,
     onError = Color.White,
-    tertiary = SuccessGreen // Using tertiary for success/green highlights
+    tertiary = SuccessGreen
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -39,7 +39,7 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun RenCarTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Disabled dynamic colors to enforce branding
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -47,7 +47,6 @@ fun RenCarTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
