@@ -28,6 +28,7 @@ class AuthViewModel @Inject constructor(
     sealed interface AuthEvent {
         data class NavigateToOtp(val phone: String) : AuthEvent
         data object NavigateToHome : AuthEvent
+        data object NavigateToOnboarding : AuthEvent
         data class ShowError(val message: String) : AuthEvent
     }
 
@@ -78,8 +79,8 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             isLoading = true
             try {
-                // Call register API
-                val response = authApi.register(
+                // Register the user
+                authApi.register(
                     UserRegisterDto(
                         fullName = fullName,
                         email = email,
@@ -87,9 +88,11 @@ class AuthViewModel @Inject constructor(
                         password = passwordPlain
                     )
                 )
-                tokenManager.saveTokens(response.accessToken, response.refreshToken)
+                // After registration, trigger OTP via login to force phone verification
+                authApi.login(LoginDto(phone = phone))
                 isLoading = false
-                _events.emit(AuthEvent.NavigateToHome)
+                startOtpTimer()
+                _events.emit(AuthEvent.NavigateToOtp(phone))
             } catch (e: Exception) {
                 isLoading = false
                 val errorMsg = e.localizedMessage ?: "Kayıt sırasında bir hata oluştu."
@@ -111,6 +114,13 @@ class AuthViewModel @Inject constructor(
                 val errorMsg = e.localizedMessage ?: "Doğrulama kodu geçersiz veya süresi dolmuş."
                 _events.emit(AuthEvent.ShowError(errorMsg))
             }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            tokenManager.clearTokens()
+            _events.emit(AuthEvent.NavigateToOnboarding)
         }
     }
 

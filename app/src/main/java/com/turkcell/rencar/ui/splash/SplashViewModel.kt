@@ -34,18 +34,29 @@ class SplashViewModel @Inject constructor(
     fun checkSession() {
         viewModelScope.launch {
             try {
-                // Get the saved token from token manager flow
                 val token = tokenManager.accessToken.first()
                 if (token.isNullOrBlank()) {
                     _state.value = SplashState.NavigateToOnboarding
                 } else {
-                    // Validate via authApi.getMe
-                    authApi.getMe("Bearer $token")
-                    _state.value = SplashState.NavigateToHome
+                    try {
+                        // Validate session with /auth/me
+                        authApi.getMe("Bearer $token")
+                        _state.value = SplashState.NavigateToHome
+                    } catch (e: retrofit2.HttpException) {
+                        if (e.code() == 401) {
+                            // Token expired or invalid → clear and go to onboarding
+                            tokenManager.clearTokens()
+                            _state.value = SplashState.NavigateToOnboarding
+                        } else {
+                            // Server/network error → keep token, go home optimistically
+                            _state.value = SplashState.NavigateToHome
+                        }
+                    } catch (e: Exception) {
+                        // Network error (no internet) → keep token, go home optimistically
+                        _state.value = SplashState.NavigateToHome
+                    }
                 }
             } catch (e: Exception) {
-                // Network failure or unauthorized -> clear tokens & onboarding
-                tokenManager.clearTokens()
                 _state.value = SplashState.NavigateToOnboarding
             }
         }
