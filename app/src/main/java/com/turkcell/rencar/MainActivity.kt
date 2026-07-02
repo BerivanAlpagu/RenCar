@@ -8,7 +8,18 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+<<<<<<< Updated upstream
 import androidx.compose.foundation.layout.*
+=======
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+>>>>>>> Stashed changes
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -40,7 +51,134 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             RenCarTheme {
+<<<<<<< Updated upstream
                 MainAppShell()
+=======
+                val navController = rememberNavController()
+                val splashState by splashViewModel.state.collectAsState()
+                val context = LocalContext.current
+
+                LaunchedEffect(Unit) {
+                    authViewModel.events.collect { event ->
+                        when (event) {
+                            is AuthViewModel.AuthEvent.NavigateToOtp -> {
+                                navController.navigate(Screen.Otp(event.phone))
+                            }
+                            is AuthViewModel.AuthEvent.NavigateToHome -> {
+                                navController.navigate(Screen.Home) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                            is AuthViewModel.AuthEvent.NavigateToOnboarding -> {
+                                navController.navigate(Screen.Onboarding) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                            is AuthViewModel.AuthEvent.ShowError -> {
+                                Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                }
+
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = Screen.Splash,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                    ) {
+                        composable<Screen.Splash> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = Color(0xFF0B6BCB))
+                            }
+
+                            LaunchedEffect(splashState) {
+                                when (splashState) {
+                                    SplashViewModel.SplashState.NavigateToOnboarding -> {
+                                        navController.navigate(Screen.Onboarding) {
+                                            popUpTo(Screen.Splash) { inclusive = true }
+                                        }
+                                    }
+                                    SplashViewModel.SplashState.NavigateToHome -> {
+                                        navController.navigate(Screen.Home) {
+                                            popUpTo(Screen.Splash) { inclusive = true }
+                                        }
+                                    }
+                                    SplashViewModel.SplashState.Loading -> {}
+                                }
+                            }
+                        }
+
+                        composable<Screen.Onboarding> {
+                            OnboardingScreen(
+                                onStartClick = {
+                                    navController.navigate(Screen.Register)
+                                },
+                                onLoginClick = {
+                                    navController.navigate(Screen.Login)
+                                }
+                            )
+                        }
+
+                        composable<Screen.Login> {
+                            LoginScreen(
+                                viewModel = authViewModel,
+                                onBackClick = {
+                                    navController.navigateUp()
+                                },
+                                onRegisterClick = {
+                                    navController.navigate(Screen.Register) {
+                                        popUpTo(Screen.Login) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable<Screen.Register> {
+                            RegisterScreen(
+                                viewModel = authViewModel,
+                                onBackClick = {
+                                    navController.navigateUp()
+                                },
+                                onLoginClick = {
+                                    navController.navigate(Screen.Login) {
+                                        popUpTo(Screen.Register) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable<Screen.Otp> { backStackEntry ->
+                            val route = backStackEntry.toRoute<Screen.Otp>()
+                            OtpVerificationScreen(
+                                phone = route.phone,
+                                viewModel = authViewModel,
+                                onBackClick = {
+                                    navController.navigateUp()
+                                },
+                                onChangePhoneClick = {
+                                    navController.navigate(Screen.Login) {
+                                        popUpTo(Screen.Otp::class) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable<Screen.Home> {
+                            HomeScreen(
+                                onLogoutClick = { authViewModel.logout() }
+                            )
+                        }
+                    }
+                }
+>>>>>>> Stashed changes
             }
         }
     }
