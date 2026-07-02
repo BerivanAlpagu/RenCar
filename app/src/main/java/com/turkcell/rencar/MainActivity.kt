@@ -15,6 +15,22 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.turkcell.rencar.feature.vehicles.presentation.map.MapScreen
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -55,6 +71,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        org.maplibre.android.MapLibre.getInstance(this)
         enableEdgeToEdge()
         setContent {
             RenCarTheme {
@@ -187,42 +204,47 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun HomeScreen(onLogoutClick: () -> Unit) {
-    val isDark = isSystemInDarkTheme()
-    val backgroundColor = if (isDark) Color(0xFF0C0F14) else Color(0xFFEEF1F6)
-    val textColor = if (isDark) Color(0xFFF3F6FA) else Color(0xFF101620)
+    var selectedItem by remember { mutableStateOf(0) }
+    val items = listOf("Harita", "Geçmiş", "Cüzdan", "Profil")
+    val icons = listOf(
+        Icons.Filled.LocationOn,
+        Icons.Filled.List,
+        Icons.Filled.ShoppingCart,
+        Icons.Filled.AccountCircle
+    )
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "🏠  Ana Sayfa",
-                style = MaterialTheme.typography.headlineMedium,
-                color = textColor
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = onLogoutClick,
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFDC3545),
-                    contentColor = Color.White
-                ),
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(52.dp)
-            ) {
-                Text(
-                    text = "Çıkış Yap",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                items.forEachIndexed { index, item ->
+                    NavigationBarItem(
+                        icon = { Icon(icons[index], contentDescription = item) },
+                        label = { Text(item) },
+                        selected = selectedItem == index,
+                        onClick = { selectedItem = index }
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            when (selectedItem) {
+                0 -> MapScreen()
+                1 -> DummyPlaceholderScreen("Geçmiş Ekranı")
+                2 -> DummyPlaceholderScreen("Cüzdan Ekranı")
+                3 -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        DummyPlaceholderScreen("Profil Ekranı")
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = onLogoutClick) {
+                            Text("Çıkış Yap")
+                        }
+                    }
+                }
             }
         }
     }
