@@ -1,4 +1,4 @@
-package com.turkcell.rencar.ui.theme
+package com.turkcell.rencar.core.designsystem
 
 import androidx.compose.ui.graphics.Color
 
