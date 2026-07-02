@@ -13,23 +13,31 @@ Korumalı (Security gerektiren) tüm endpoint'ler için `Authorization: Bearer <
   - `email` (string, email, zorunlu)
   - `password` (string, min 6, zorunlu)
   - `fullName` (string, zorunlu)
-  - `phone` (string, opsiyonel)
+  - `phone` (string, zorunlu)
 - **Response (201 - `AuthResponseDto`):**
   - `accessToken` (string): Kısa ömürlü JWT.
   - `refreshToken` (string): Uzun ömürlü yenileme token'ı.
   - `user` (`UserResponseDto`)
 - **Olası Hatalar:** `409 Conflict` (E-posta zaten kayıtlı)
 
-### 1.2. Giriş Yap
+### 1.2. Giriş Yap (Adım 1 - OTP Gönder)
 - **Endpoint:** `POST /auth/login`
-- **Açıklama:** E-posta ve şifre ile giriş yapıp token döner.
+- **Açıklama:** Parolasız giriş için telefon numarasına SMS kodu gönderir (Simülasyon).
 - **Request Body (`LoginDto`):**
-  - `email` (string, email, zorunlu)
-  - `password` (string, zorunlu)
-- **Response (200 - `AuthResponseDto`):** `accessToken`, `refreshToken`, `user` (`UserResponseDto`)
-- **Olası Hatalar:** `401 Unauthorized` (E-posta veya parola hatalı)
+  - `phone` (string, zorunlu)
+- **Response (200 - `OtpRequiredResponseDto`):** `message`, `phone`, `expiresAt`
+- **Olası Hatalar:** `401 Unauthorized` (Kayıtlı kullanıcı yok)
 
-### 1.3. Token Yenileme (Rotation)
+### 1.3. Doğrulama (Adım 2 - OTP Doğrula)
+- **Endpoint:** `POST /auth/verify-otp`
+- **Açıklama:** SMS ile gelen kodu doğrulayıp token döner.
+- **Request Body (`VerifyOtpDto`):**
+  - `phone` (string, zorunlu)
+  - `code` (string, zorunlu)
+- **Response (200 - `AuthResponseDto`):** `accessToken`, `refreshToken`, `user` (`UserResponseDto`)
+- **Olası Hatalar:** `401 Unauthorized` (Kod hatalı veya süresi dolmuş)
+
+### 1.4. Token Yenileme (Rotation)
 - **Endpoint:** `POST /auth/refresh`
 - **Açıklama:** Geçerli bir refresh token ile **yeni** bir access + refresh çifti döner. Gönderilen eski refresh token anında geçersiz olur.
 - **Request Body (`RefreshTokenDto`):**
@@ -37,7 +45,7 @@ Korumalı (Security gerektiren) tüm endpoint'ler için `Authorization: Bearer <
 - **Response (200 - `AuthResponseDto`):** Yeni `accessToken`, `refreshToken`, `user`
 - **Olası Hatalar:** `401 Unauthorized` (Token süresi dolmuş veya tekrar kullanılmış)
 
-### 1.4. Çıkış Yap
+### 1.5. Çıkış Yap
 - **Endpoint:** `POST /auth/logout`
 - **Header:** `Authorization: Bearer <accessToken>`
 - **Açıklama:** Kullanıcının aktif refresh oturumlarını iptal eder. 

@@ -55,7 +55,7 @@
       },
       "/auth/login": {
         "post": {
-          "description": "E-posta ve parola doğrularsa JWT döner.",
+          "description": "PAROLASIZ giriş: telefon numarası kayıtlıysa 6 haneli doğrulama kodu \"SMS ile gönderilir\" (SİMÜLASYON: gerçek SMS sağlayıcısı yoktur, kod sabittir — varsayılan **123456**, OTP_DEFAULT_CODE env ile değişir). Token DÖNMEZ; kodu POST /auth/verify-otp ucuna gönderin.\n\nKod 5 dakika geçerlidir ve tek kullanımlıktır; yeniden login olmak önceki kodu iptal edip yenisini üretir.",
           "operationId": "AuthController_login",
           "parameters": [],
           "requestBody": {
@@ -70,7 +70,43 @@
           },
           "responses": {
             "200": {
-              "description": "Giriş başarılı.",
+              "description": "Telefon kayıtlı; kod \"gönderildi\", verify-otp bekleniyor.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/OtpRequiredResponseDto"
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Bu telefon numarasına kayıtlı kullanıcı yok."
+            }
+          },
+          "summary": "Giriş yap (1. adım: telefona SMS kodu gönder — simülasyon)",
+          "tags": [
+            "Auth"
+          ]
+        }
+      },
+      "/auth/verify-otp": {
+        "post": {
+          "description": "Telefon + 6 haneli kodu doğrular ve access + refresh token çiftini döner. SMS simüle edildiğinden kod varsayılan olarak **123456**'dır.\n\n401 senaryoları: kod yanlış, süresi dolmuş (5 dk), zaten kullanılmış veya yanlış deneme eşiği (5) aşılmış. Eşik aşımında yeniden login olup yeni kod almak gerekir.",
+          "operationId": "AuthController_verifyOtp",
+          "parameters": [],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyOtpDto"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Kod doğru; token çifti üretildi.",
               "content": {
                 "application/json": {
                   "schema": {
@@ -80,10 +116,10 @@
               }
             },
             "401": {
-              "description": "E-posta veya parola hatalı."
+              "description": "Kod geçersiz veya süresi dolmuş."
             }
           },
-          "summary": "Giriş yap",
+          "summary": "Giriş yap (2. adım: SMS kodunu doğrula)",
           "tags": [
             "Auth"
           ]
@@ -1304,7 +1340,7 @@
     },
     "info": {
       "title": "Araç Kiralama API",
-      "description": "Araç kiralama uygulamasının backend API dokümantasyonu.\n\nKimlik doğrulama JWT (Bearer) iledir. Önce **Auth > /auth/login** (veya /auth/register) ile token alın, ardından sağ üstteki **Authorize** butonuna token'ı girin; korumalı endpoint'ler aktifleşecektir.",
+      "description": "Araç kiralama uygulamasının backend API dokümantasyonu.\n\nKimlik doğrulama JWT (Bearer) iledir. Giriş PAROLASIZ ve İKİ adımlıdır: önce **Auth > /auth/login** ile telefon numaranıza SMS kodu \"gönderin\" (simülasyon — kod sabittir: **123456**), ardından **/auth/verify-otp** ile telefon + kodu gönderip token alın (/auth/register token'ı doğrudan döner). Son olarak sağ üstteki **Authorize** butonuna token'ı girin; korumalı endpoint'ler aktifleşecektir.",
       "version": "1.0",
       "contact": {}
     },
@@ -1365,14 +1401,15 @@
             },
             "phone": {
               "type": "string",
-              "description": "Telefon numarası (opsiyonel).",
+              "description": "Telefon numarası (benzersiz olmalı). Login OTP akışı telefonla başladığından ZORUNLUDUR; telefonsuz kullanıcı giriş yapamaz.",
               "example": "+905551112233"
             }
           },
           "required": [
             "email",
             "password",
-            "fullName"
+            "fullName",
+            "phone"
           ]
         },
         "UserResponseDto": {
@@ -1451,21 +1488,60 @@
         "LoginDto": {
           "type": "object",
           "properties": {
-            "email": {
+            "phone": {
               "type": "string",
-              "description": "Kayıtlı e-posta adresi.",
-              "example": "admin@rencar.com",
-              "format": "email"
-            },
-            "password": {
-              "type": "string",
-              "description": "Parola.",
-              "example": "Admin123!"
+              "description": "Kayıtlı telefon numarası. Doğrulama kodu bu numaraya \"gönderilir\".",
+              "example": "+905550000000"
             }
           },
           "required": [
-            "email",
-            "password"
+            "phone"
+          ]
+        },
+        "OtpRequiredResponseDto": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string",
+              "description": "Bilgilendirme mesajı.",
+              "example": "Doğrulama kodu SMS ile gönderildi (simülasyon)."
+            },
+            "phone": {
+              "type": "string",
+              "description": "Kodun gönderildiği (verify-otp adımında da kullanılacak) telefon.",
+              "example": "+905550000000"
+            },
+            "expiresAt": {
+              "format": "date-time",
+              "type": "string",
+              "description": "Kodun geçerlilik sonu (UTC). Sonrasında yeniden login gerekir.",
+              "example": "2026-07-02T12:35:00.000Z"
+            }
+          },
+          "required": [
+            "message",
+            "phone",
+            "expiresAt"
+          ]
+        },
+        "VerifyOtpDto": {
+          "type": "object",
+          "properties": {
+            "phone": {
+              "type": "string",
+              "description": "Login adımında kullanılan telefon numarası.",
+              "example": "+905550000000"
+            },
+            "code": {
+              "type": "string",
+              "description": "SMS ile iletilen(!) 6 haneli tek kullanımlık kod. SMS simüle edildiği için varsayılan kod 123456'dır (OTP_DEFAULT_CODE ile değiştirilebilir).",
+              "example": "123456",
+              "pattern": "^\\d{6}$"
+            }
+          },
+          "required": [
+            "phone",
+            "code"
           ]
         },
         "RefreshTokenDto": {

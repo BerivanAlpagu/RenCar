@@ -12,12 +12,13 @@ Bu dokuman, RenCar uygulamasinda giris, kayit ve oturum yonetimi icin uyulacak k
 ## API ve Veri Kurallari
 
 - `POST /auth/register` yeni kullanici kaydi icin kullanilir.
-- `POST /auth/login` mevcut kullaniciyi oturum acmak icin kullanilir.
+- `POST /auth/login` mevcut kullaniciyi oturum acmak icin telefon numarasi ile SMS kodu talep eder.
+- `POST /auth/verify-otp` SMS kodunu dogrulayip tokenlari doner.
 - `POST /auth/refresh` access token yenilemek icin kullanilir.
 - `POST /auth/logout` tum aktif refresh oturumlarini iptal eder.
 - `GET /auth/me` aktif kullanicinin profilini ve rolunu getirir.
-- Kayit formunda `fullName`, `email`, `phone`, `password` alanlari bulunur.
-- Login formunda `email` ve `password` alanlari bulunur.
+- Kayit formunda `fullName`, `email`, `phone`, `password` alanlari bulunur (`phone` artik zorunludur).
+- Login formunda `phone` alani bulunur, ardindan gelen adimda ise `code` girilir.
 
 ## Uygulama Kurallari
 

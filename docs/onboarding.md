@@ -36,7 +36,7 @@ sequenceDiagram
 - **Ekran Tasarımları (`rencar.pdf` Sayfa 3-6):** Kullanıcı telefon numarasını girer, SMS doğrulama kodu (`OTP`) alır ve girer.
 - **Teknik Karşılık:**
   - Yeni kayıt olan her kullanıcı `POST /auth/register` ile varsayılan olarak **PENDING** rolüyle açılır.
-  - Giriş yapıldığında (`POST /auth/login`), uygulama JWT token'ları yerel güvenli alana (`EncryptedSharedPreferences` veya `DataStore`) kaydeder.
+  - Giriş yapıldığında (`POST /auth/verify-otp` ile OTP doğrulandıktan sonra), uygulama JWT token'ları yerel güvenli alana (`EncryptedSharedPreferences` veya `DataStore`) kaydeder.
 
 ### Adım 2.2: Ehliyet Yükleme ve Gönderme
 - **Ekran Tasarımı (`rencar.pdf` Sayfa 7-8):** 3 adımdan oluşan bir doğrulanma sihirbazı gösterilir: "1. Ehliyet", "2. Selfie", "3. Onay". Ehliyetin ön yüzü ve arka yüzü kamera ile çekilir veya galeriden seçilir.

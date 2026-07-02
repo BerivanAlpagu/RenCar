@@ -23,7 +23,7 @@ Network isteklerinden dönen hatalar `Result` (veya `ApiResult`) wrapper sınıf
   - Refresh token geçerliliğini yitirmiş veya tekrar (reuse) kullanılmış (`/auth/refresh`).
   - Access token'ın süresinin dolması.
 - **Aksiyon:** 
-  - Login ekranında ise: "E-posta veya parola hatalı".
+  - Login ekranında ise: "Bu telefon numarasına kayıtlı kullanıcı yok" veya "Kod geçersiz veya süresi dolmuş".
   - Diğer ekranlarda ise: OkHttp `Authenticator` otomatik olarak `/auth/refresh` tetikler. Refresh işlemi de 401 dönerse oturum tamamen kapatılır, token'lar temizlenir ve kullanıcı Login ekranına yönlendirilir.
 
 ### 403 Forbidden

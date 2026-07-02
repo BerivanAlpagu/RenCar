@@ -9,8 +9,9 @@ Bu doküman, RenCar Android projesi için uygulanacak kapsam, API sözleşmeleri
 ## 2. Doğrulanan Endpointler
 
 ### 2.1. Auth ve Token Akışı
-- **`POST /auth/register`**: PENDING rolüyle yeni kullanıcı oluşturur. Hemen JWT döner.
-- **`POST /auth/login`**: E-posta ve şifre ile giriş yapıp JWT (accessToken, refreshToken, user) döner.
+- **`POST /auth/register`**: PENDING rolüyle yeni kullanıcı oluşturur. Telefon bilgisi zorunludur. Hemen JWT döner.
+- **`POST /auth/login`**: Parolasız girişin ilk adımıdır, telefon numarası alır ve SMS kodu (simülasyon) gönderir.
+- **`POST /auth/verify-otp`**: Gelen SMS kodunu doğrulayıp JWT (accessToken, refreshToken, user) döner.
 - **`POST /auth/refresh`**: Token yenileme (Rotation). Eski refreshToken geçersiz olur. Reuse (tekrar kullanım) durumunda tüm oturumlar kapatılır. 
 - **`POST /auth/logout`**: Kullanıcının tüm aktif refresh oturumlarını iptal eder.
 - **`GET /auth/me`**: Token sahibinin profilini ve güncel rolünü (PENDING, CUSTOMER, ADMIN) döner.
@@ -72,7 +73,7 @@ Proje Clean Architecture ve özellik (feature) bazlı paketleme (auth, vehicles,
 - Ortak Error handling sarmalayıcıları (Result, Error mapping).
 
 **Batch 2: Auth Feature (Data & Domain)**
-- `AuthApi.kt` (Login, Register, Refresh, Me)
+- `AuthApi.kt` (Login, VerifyOtp, Register, Refresh, Me)
 - `AuthRepository.kt` ve `DefaultAuthRepository.kt`
 - DTO -> Domain modelleri (`AuthResponseDto` vb.)
 
