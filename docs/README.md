@@ -47,7 +47,7 @@ Aşağıdaki bağlantıları kullanarak ilgili geliştirme ve mimari kılavuzlar
 ## 2. Temel Referans Kaynakları
 
 Dokümantasyonu okurken ve geliştirme yaparken aşağıdaki dosyaları referans alınız:
-1. **API Sözleşmesi (Swagger):** [openapi.json](file:///c:/Users/ASUS/StudioProjects/RenCar/app/src/main/java/com/turkcell/rencar/docs/api/openapi.json)
-2. **Görsel Tasarım Dosyası (Figma/PDF Output):** [rencar.pdf](file:///c:/Users/ASUS/StudioProjects/RenCar/rencar.pdf)
+1. **API Sözleşmesi (Swagger):** [openapi.json](https://github.com/BerivanAlpagu/RenCar/blob/initialproject/app/src/main/java/com/turkcell/rencar/docs/api/openapi.json)
+2. **Görsel Tasarım Dosyası (Figma/PDF Output):** [rencar.pdf](https://github.com/BerivanAlpagu/RenCar/blob/initialproject/rencar.pdf)
 3. **Kavramlar Sözlüğü:** [glossary.md](glossary.md)
 4. **Kullanıcı Kayıt ve Doğrulama Akışı:** [onboarding.md](onboarding.md)
