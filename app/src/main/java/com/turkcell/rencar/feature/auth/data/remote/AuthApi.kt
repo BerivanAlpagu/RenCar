@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.Header
+import retrofit2.http.Multipart
+import retrofit2.http.Part
 import retrofit2.http.POST
 
 @Serializable
@@ -77,4 +78,37 @@ interface AuthApi {
     suspend fun verifyOtp(
         @Body body: VerifyOtpDto
     ): AuthResponseDto
+}
+
+@Serializable
+data class UploadLicenseResponseDto(
+    val id: String,
+    val status: String,
+    val frontImageUrl: String,
+    val backImageUrl: String,
+    val rejectReason: String? = null,
+    val reviewedAt: String? = null,
+    val createdAt: String,
+    val updatedAt: String
+)
+
+@Serializable
+data class LicenseStatusResponseDto(
+    val status: String,
+    val frontImageUrl: String? = null,
+    val backImageUrl: String? = null,
+    val rejectReason: String? = null,
+    val reviewedAt: String? = null
+)
+
+interface LicenseApi {
+    @GET("license/status")
+    suspend fun getStatus(): LicenseStatusResponseDto
+
+    @Multipart
+    @POST("license/upload")
+    suspend fun upload(
+        @Part front: okhttp3.MultipartBody.Part,
+        @Part back: okhttp3.MultipartBody.Part
+    ): UploadLicenseResponseDto
 }

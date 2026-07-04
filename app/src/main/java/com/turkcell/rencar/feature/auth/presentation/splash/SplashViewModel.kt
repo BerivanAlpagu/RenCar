@@ -3,6 +3,7 @@ package com.turkcell.rencar.feature.auth.presentation.splash
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.rencar.feature.auth.data.remote.AuthApi
+import com.turkcell.rencar.feature.auth.data.remote.LicenseApi
 import com.turkcell.rencar.feature.auth.data.local.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,12 +16,14 @@ import javax.inject.Inject
 @HiltViewModel
 class SplashViewModel @Inject constructor(
     private val tokenManager: TokenManager,
-    private val authApi: AuthApi
+    private val authApi: AuthApi,
+    private val licenseApi: LicenseApi
 ) : ViewModel() {
 
     sealed interface SplashState {
         data object Loading : SplashState
         data object NavigateToOnboarding : SplashState
+        data object NavigateToLicense : SplashState
         data object NavigateToHome : SplashState
     }
 
@@ -40,7 +43,12 @@ class SplashViewModel @Inject constructor(
                 } else {
                     try {
                         authApi.getMe()
-                        _state.value = SplashState.NavigateToHome
+                        val licenseStatus = runCatching { licenseApi.getStatus() }.getOrNull()
+                        _state.value = when (licenseStatus?.status) {
+                            "APPROVED" -> SplashState.NavigateToHome
+                            null, "NOT_SUBMITTED", "UNDER_REVIEW", "REJECTED" -> SplashState.NavigateToLicense
+                            else -> SplashState.NavigateToLicense
+                        }
                     } catch (e: retrofit2.HttpException) {
                         if (e.code() == 401) {
                             tokenManager.clearTokens()
