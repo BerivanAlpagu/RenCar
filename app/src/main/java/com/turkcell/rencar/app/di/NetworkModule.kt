@@ -1,6 +1,7 @@
 package com.turkcell.rencar.app.di
 
 import com.turkcell.rencar.feature.auth.data.remote.AuthApi
+import com.turkcell.rencar.feature.auth.data.remote.LicenseApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -68,6 +69,12 @@ object NetworkModule {
     @Singleton
     fun provideAuthApi(retrofit: Retrofit): AuthApi {
         return retrofit.create(AuthApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLicenseApi(retrofit: Retrofit): LicenseApi {
+        return retrofit.create(LicenseApi::class.java)
     }
 
     @Provides

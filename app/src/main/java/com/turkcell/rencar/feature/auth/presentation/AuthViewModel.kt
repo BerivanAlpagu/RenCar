@@ -27,6 +27,7 @@ class AuthViewModel @Inject constructor(
 
     sealed interface AuthEvent {
         data class NavigateToOtp(val phone: String) : AuthEvent
+        data object NavigateToLicense : AuthEvent
         data object NavigateToHome : AuthEvent
         data object NavigateToOnboarding : AuthEvent
         data class ShowError(val message: String) : AuthEvent
@@ -121,7 +122,7 @@ class AuthViewModel @Inject constructor(
                 val response = authApi.verifyOtp(VerifyOtpDto(phone = formattedPhone, code = code))
                 tokenManager.saveTokens(response.accessToken, response.refreshToken)
                 isLoading = false
-                _events.emit(AuthEvent.NavigateToHome)
+                _events.emit(AuthEvent.NavigateToLicense)
             } catch (e: Exception) {
                 isLoading = false
                 val errorMsg = e.localizedMessage ?: "Doğrulama kodu geçersiz veya süresi dolmuş."

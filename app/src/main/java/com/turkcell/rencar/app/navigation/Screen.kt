@@ -19,6 +19,12 @@ sealed interface Screen {
     data class Otp(val phone: String) : Screen
 
     @Serializable
+    data object License : Screen
+
+    @Serializable
+    data object LicenseApproval : Screen
+
+    @Serializable
     data object Home : Screen
 
     @Serializable

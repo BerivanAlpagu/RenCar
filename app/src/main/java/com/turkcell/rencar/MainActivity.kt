@@ -59,6 +59,9 @@ import com.turkcell.rencar.app.navigation.Screen
 import com.turkcell.rencar.core.designsystem.RenCarTheme
 import com.turkcell.rencar.feature.auth.presentation.AuthViewModel
 import com.turkcell.rencar.feature.auth.presentation.login.LoginScreen
+import com.turkcell.rencar.feature.auth.presentation.license.LicenseApprovalScreen
+import com.turkcell.rencar.feature.auth.presentation.license.LicenseUploadScreen
+import com.turkcell.rencar.feature.auth.presentation.license.LicenseViewModel
 import com.turkcell.rencar.feature.auth.presentation.onboarding.OnboardingScreen
 import com.turkcell.rencar.feature.auth.presentation.otp.OtpVerificationScreen
 import com.turkcell.rencar.feature.auth.presentation.register.RegisterScreen
@@ -89,6 +92,9 @@ class MainActivity : ComponentActivity() {
                         when (event) {
                             is AuthViewModel.AuthEvent.NavigateToOtp -> {
                                 navController.navigate(Screen.Otp(event.phone))
+                            }
+                            is AuthViewModel.AuthEvent.NavigateToLicense -> {
+                                navController.navigate(Screen.License)
                             }
                             is AuthViewModel.AuthEvent.NavigateToHome -> {
                                 navController.navigate(Screen.Home) {
@@ -126,6 +132,16 @@ class MainActivity : ComponentActivity() {
                             when (splashState) {
                                 SplashViewModel.SplashState.NavigateToOnboarding -> {
                                     navController.navigate(Screen.Onboarding) {
+                                        popUpTo(Screen.Splash) { inclusive = true }
+                                    }
+                                }
+                                SplashViewModel.SplashState.NavigateToLicense -> {
+                                    navController.navigate(Screen.License) {
+                                        popUpTo(Screen.Splash) { inclusive = true }
+                                    }
+                                }
+                                SplashViewModel.SplashState.NavigateToLicenseApproval -> {
+                                    navController.navigate(Screen.LicenseApproval) {
                                         popUpTo(Screen.Splash) { inclusive = true }
                                     }
                                 }
@@ -179,6 +195,35 @@ class MainActivity : ComponentActivity() {
                             onChangePhoneClick = {
                                 navController.navigate(Screen.Login) {
                                     popUpTo(Screen.Otp::class) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
+                    composable<Screen.License> {
+                        val licenseViewModel: LicenseViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+                        LicenseUploadScreen(
+                            viewModel = licenseViewModel,
+                            onGoToApproval = {
+                                navController.navigate(Screen.LicenseApproval) {
+                                    popUpTo(Screen.License) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
+                    composable<Screen.LicenseApproval> {
+                        val licenseViewModel: LicenseViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+                        LicenseApprovalScreen(
+                            viewModel = licenseViewModel,
+                            onApproved = {
+                                navController.navigate(Screen.Home) {
+                                    popUpTo(Screen.LicenseApproval) { inclusive = true }
+                                }
+                            },
+                            onRejected = {
+                                navController.navigate(Screen.License) {
+                                    popUpTo(Screen.LicenseApproval) { inclusive = true }
                                 }
                             }
                         )

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -21,6 +22,7 @@ class TokenManager @Inject constructor(
     companion object {
         private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
         private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
+        private val LICENSE_UPLOADED_KEY = booleanPreferencesKey("license_uploaded")
     }
 
     val accessToken: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -29,6 +31,10 @@ class TokenManager @Inject constructor(
 
     val refreshToken: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[REFRESH_TOKEN_KEY]
+    }
+
+    val isLicenseUploaded: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[LICENSE_UPLOADED_KEY] ?: false
     }
 
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
@@ -42,6 +48,12 @@ class TokenManager @Inject constructor(
         context.dataStore.edit { preferences ->
             preferences.remove(ACCESS_TOKEN_KEY)
             preferences.remove(REFRESH_TOKEN_KEY)
+        }
+    }
+
+    suspend fun setLicenseUploaded(uploaded: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[LICENSE_UPLOADED_KEY] = uploaded
         }
     }
 }
