@@ -59,6 +59,7 @@ import com.turkcell.rencar.app.navigation.Screen
 import com.turkcell.rencar.core.designsystem.RenCarTheme
 import com.turkcell.rencar.feature.auth.presentation.AuthViewModel
 import com.turkcell.rencar.feature.auth.presentation.login.LoginScreen
+import com.turkcell.rencar.feature.auth.presentation.license.LicenseApprovalScreen
 import com.turkcell.rencar.feature.auth.presentation.license.LicenseUploadScreen
 import com.turkcell.rencar.feature.auth.presentation.license.LicenseViewModel
 import com.turkcell.rencar.feature.auth.presentation.onboarding.OnboardingScreen
@@ -139,6 +140,11 @@ class MainActivity : ComponentActivity() {
                                         popUpTo(Screen.Splash) { inclusive = true }
                                     }
                                 }
+                                SplashViewModel.SplashState.NavigateToLicenseApproval -> {
+                                    navController.navigate(Screen.LicenseApproval) {
+                                        popUpTo(Screen.Splash) { inclusive = true }
+                                    }
+                                }
                                 SplashViewModel.SplashState.NavigateToHome -> {
                                     navController.navigate(Screen.Home) {
                                         popUpTo(Screen.Splash) { inclusive = true }
@@ -198,9 +204,26 @@ class MainActivity : ComponentActivity() {
                         val licenseViewModel: LicenseViewModel = androidx.hilt.navigation.compose.hiltViewModel()
                         LicenseUploadScreen(
                             viewModel = licenseViewModel,
-                            onBackToHome = {
-                                navController.navigate(Screen.Home) {
+                            onGoToApproval = {
+                                navController.navigate(Screen.LicenseApproval) {
                                     popUpTo(Screen.License) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
+                    composable<Screen.LicenseApproval> {
+                        val licenseViewModel: LicenseViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+                        LicenseApprovalScreen(
+                            viewModel = licenseViewModel,
+                            onApproved = {
+                                navController.navigate(Screen.Home) {
+                                    popUpTo(Screen.LicenseApproval) { inclusive = true }
+                                }
+                            },
+                            onRejected = {
+                                navController.navigate(Screen.License) {
+                                    popUpTo(Screen.LicenseApproval) { inclusive = true }
                                 }
                             }
                         )

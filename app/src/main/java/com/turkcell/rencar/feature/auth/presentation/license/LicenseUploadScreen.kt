@@ -54,7 +54,7 @@ import java.io.FileOutputStream
 @Composable
 fun LicenseUploadScreen(
     viewModel: LicenseViewModel,
-    onBackToHome: () -> Unit
+    onGoToApproval: () -> Unit
 ) {
     val status by viewModel.status.collectAsState()
     val context = LocalContext.current
@@ -67,10 +67,6 @@ fun LicenseUploadScreen(
 
     LaunchedEffect(Unit) {
         viewModel.refreshStatus()
-    }
-
-    LaunchedEffect(status) {
-        if (status == "APPROVED") onBackToHome()
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -200,6 +196,7 @@ fun LicenseUploadScreen(
                         backPath = backPath,
                         onSuccess = {
                             isUploading = false
+                            onGoToApproval()
                         },
                         onError = {
                             isUploading = false

@@ -22,6 +22,9 @@ sealed interface Screen {
     data object License : Screen
 
     @Serializable
+    data object LicenseApproval : Screen
+
+    @Serializable
     data object Home : Screen
 
     @Serializable

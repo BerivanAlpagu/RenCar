@@ -24,6 +24,7 @@ class SplashViewModel @Inject constructor(
         data object Loading : SplashState
         data object NavigateToOnboarding : SplashState
         data object NavigateToLicense : SplashState
+        data object NavigateToLicenseApproval : SplashState
         data object NavigateToHome : SplashState
     }
 
@@ -46,7 +47,8 @@ class SplashViewModel @Inject constructor(
                         val licenseStatus = runCatching { licenseApi.getStatus() }.getOrNull()
                         _state.value = when (licenseStatus?.status) {
                             "APPROVED" -> SplashState.NavigateToHome
-                            null, "NOT_SUBMITTED", "UNDER_REVIEW", "REJECTED" -> SplashState.NavigateToLicense
+                            "UNDER_REVIEW" -> SplashState.NavigateToLicenseApproval
+                            null, "NOT_SUBMITTED", "REJECTED" -> SplashState.NavigateToLicense
                             else -> SplashState.NavigateToLicense
                         }
                     } catch (e: retrofit2.HttpException) {
