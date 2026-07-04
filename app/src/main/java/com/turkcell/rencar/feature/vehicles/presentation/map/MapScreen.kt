@@ -59,7 +59,8 @@ import org.maplibre.android.geometry.LatLng
 
 @Composable
 fun MapScreen(
-    viewModel: MapViewModel = hiltViewModel()
+    viewModel: MapViewModel = hiltViewModel(),
+    onReserveClick: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -121,6 +122,7 @@ fun MapScreen(
         if (state.selectedVehicle != null) {
             VehicleDetailBottomSheet(
                 vehicle = state.selectedVehicle!!,
+                onReserveClick = { onReserveClick(state.selectedVehicle!!.id) },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         } else {
@@ -177,6 +179,7 @@ fun FloatingBackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 fun VehicleDetailBottomSheet(
     vehicle: Vehicle,
+    onReserveClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -338,7 +341,7 @@ fun VehicleDetailBottomSheet(
                 contentAlignment = Alignment.Center
             ) {
                 Button(
-                    onClick = { /* Reserve */ },
+                    onClick = onReserveClick,
                     modifier = Modifier.fillMaxSize(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = Color(0xFF0B6BCB)),
                     shape = RoundedCornerShape(18.dp),

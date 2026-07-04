@@ -69,4 +69,10 @@ object NetworkModule {
     fun provideAuthApi(retrofit: Retrofit): AuthApi {
         return retrofit.create(AuthApi::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideRentalApi(retrofit: Retrofit): com.turkcell.rencar.feature.rentals.data.remote.RentalApi {
+        return retrofit.create(com.turkcell.rencar.feature.rentals.data.remote.RentalApi::class.java)
+    }
 }
