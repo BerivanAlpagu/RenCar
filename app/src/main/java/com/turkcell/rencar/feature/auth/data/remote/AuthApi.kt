@@ -61,9 +61,7 @@ interface AuthApi {
     suspend fun checkHealth(): MessageResponseDto
 
     @GET("auth/me")
-    suspend fun getMe(
-        @Header("Authorization") token: String
-    ): UserResponseDto
+    suspend fun getMe(): UserResponseDto
 
     @POST("auth/register")
     suspend fun register(

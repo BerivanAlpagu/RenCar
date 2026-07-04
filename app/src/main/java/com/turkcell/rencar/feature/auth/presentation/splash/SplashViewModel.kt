@@ -39,7 +39,7 @@ class SplashViewModel @Inject constructor(
                     _state.value = SplashState.NavigateToOnboarding
                 } else {
                     try {
-                        authApi.getMe("Bearer $token")
+                        authApi.getMe()
                         _state.value = SplashState.NavigateToHome
                     } catch (e: retrofit2.HttpException) {
                         if (e.code() == 401) {

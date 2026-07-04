@@ -20,4 +20,16 @@ sealed interface Screen {
 
     @Serializable
     data object Home : Screen
+
+    @Serializable
+    data class ReservationConfirmation(val vehicleId: String) : Screen
+
+    @Serializable
+    data class HandoverPhoto(val vehicleId: String) : Screen
+
+    @Serializable
+    data class ActiveRental(val vehicleId: String) : Screen
+    
+    @Serializable
+    data class PaymentSummary(val vehicleId: String) : Screen
 }
