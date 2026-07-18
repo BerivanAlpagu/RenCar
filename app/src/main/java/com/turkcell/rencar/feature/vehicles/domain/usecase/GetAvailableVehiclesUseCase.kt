@@ -7,7 +7,11 @@ import javax.inject.Inject
 class GetAvailableVehiclesUseCase @Inject constructor(
     private val repository: VehicleRepository
 ) {
-    suspend operator fun invoke(type: String? = null): Result<List<Vehicle>> {
-        return repository.getAvailableVehicles(type)
+    suspend operator fun invoke(
+        type: String? = null,
+        segment: String? = null,
+        includeBusy: Boolean = false
+    ): Result<List<Vehicle>> {
+        return repository.getAvailableVehicles(type, segment, includeBusy)
     }
 }

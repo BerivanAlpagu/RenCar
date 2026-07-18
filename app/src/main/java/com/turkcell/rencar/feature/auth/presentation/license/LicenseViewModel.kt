@@ -33,16 +33,14 @@ class LicenseViewModel @Inject constructor(
         }
     }
 
-    fun upload(frontPath: String?, backPath: String?, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        if (frontPath.isNullOrBlank() || backPath.isNullOrBlank()) {
+    fun upload(frontFile: File?, backFile: File?, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        if (frontFile == null || backFile == null) {
             onError("Lütfen ön ve arka yüz fotoğrafını seç.")
             return
         }
 
         viewModelScope.launch {
             runCatching {
-                val frontFile = File(frontPath)
-                val backFile = File(backPath)
                 val front = MultipartBody.Part.createFormData(
                     "front",
                     frontFile.name,

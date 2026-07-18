@@ -1,12 +1,11 @@
 package com.turkcell.rencar.feature.rentals.presentation.handover
 
 import android.graphics.Bitmap
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
-import androidx.compose.foundation.Image
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -20,91 +19,107 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.turkcell.rencar.core.ui.PhotoCaptureGrid
+import com.turkcell.rencar.core.ui.toLocalFile
+import com.turkcell.rencar.feature.rentals.domain.model.RentalPhotoSide
+
+private fun RentalPhotoSide.label(): String = when (this) {
+    RentalPhotoSide.FRONT -> "Ön"
+    RentalPhotoSide.BACK -> "Arka"
+    RentalPhotoSide.LEFT -> "Sol"
+    RentalPhotoSide.RIGHT -> "Sağ"
+}
 
 @Composable
 fun HandoverPhotoScreen(
-    vehicleId: String,
+    rentalId: String,
+    viewModel: HandoverPhotoViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
     onStartRentalClick: (String) -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
+    val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+
     val bgColor = if (isDark) Color(0xFF0C0F14) else Color(0xFFF4F6F9)
     val topBarColor = if (isDark) Color(0xFF10151B) else Color(0xFFFFFFFF)
     val textColor = if (isDark) Color(0xFFF3F6FA) else Color(0xFF101620)
     val subTextColor = if (isDark) Color(0xFF98A2B0) else Color(0xFF5C6675)
-    
-    var frontBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var backBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var leftBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var rightBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    
-    // Tracks which side is currently being updated
-    var currentSide by remember { mutableStateOf<String?>(null) }
+
+    var currentSide by remember { mutableStateOf<RentalPhotoSide?>(null) }
     var showPickerDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(rentalId) {
+        viewModel.onEvent(HandoverPhotoEvent.ScreenOpened(rentalId))
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is HandoverPhotoEffect.NavigateToActiveRental -> onStartRentalClick(effect.rentalId)
+                is HandoverPhotoEffect.NavigateBackToMap -> onBackClick()
+                is HandoverPhotoEffect.ShowError -> {
+                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-        if (bitmap != null) {
-            when (currentSide) {
-                "Ön" -> frontBitmap = bitmap
-                "Arka" -> backBitmap = bitmap
-                "Sol" -> leftBitmap = bitmap
-                "Sağ" -> rightBitmap = bitmap
+        val side = currentSide
+        if (bitmap != null && side != null) {
+            val file = bitmap.toLocalFile(context, "handover_${side.name}")
+            if (file != null) {
+                viewModel.onEvent(HandoverPhotoEvent.PhotoCaptured(side, bitmap, file))
             }
         }
         showPickerDialog = false
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) {
-            // For demo purposes, we will just consider the URI valid and show a placeholder or we would need to decode it.
-            // Since we use Bitmap for preview, let's just create a dummy 1x1 bitmap if uri is present, 
-            // or we could use Coil to load the URI. To avoid adding dependencies, we'll just set a non-null state.
-            // Actually, we'll create a 1x1 bitmap to represent a successful gallery pick.
-            val dummyBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-            when (currentSide) {
-                "Ön" -> frontBitmap = dummyBitmap
-                "Arka" -> backBitmap = dummyBitmap
-                "Sol" -> leftBitmap = dummyBitmap
-                "Sağ" -> rightBitmap = dummyBitmap
+        val side = currentSide
+        if (uri != null && side != null) {
+            val file = uri.toLocalFile(context, "handover_${side.name}")
+            val bitmap = file?.let { android.graphics.BitmapFactory.decodeFile(it.absolutePath) }
+            if (file != null && bitmap != null) {
+                viewModel.onEvent(HandoverPhotoEvent.PhotoCaptured(side, bitmap, file))
             }
         }
         showPickerDialog = false
     }
 
-    val takenCount = listOf(frontBitmap, backBitmap, leftBitmap, rightBitmap).count { it != null }
-    val allTaken = takenCount == 4
+    val takenCount = state.uploadedCount
+    val allTaken = state.photosComplete
 
     if (showPickerDialog) {
         AlertDialog(
@@ -112,11 +127,7 @@ fun HandoverPhotoScreen(
             title = { Text(text = "Fotoğraf Yükle") },
             text = { Text("Lütfen fotoğraf çekmek veya seçmek için bir yöntem belirleyin.") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        cameraLauncher.launch(null)
-                    }
-                ) {
+                TextButton(onClick = { cameraLauncher.launch(null) }) {
                     Icon(Icons.Default.CameraAlt, contentDescription = "Camera")
                     Spacer(Modifier.width(4.dp))
                     Text("Kamera")
@@ -151,7 +162,7 @@ fun HandoverPhotoScreen(
                     modifier = Modifier
                         .size(42.dp)
                         .background(if (isDark) Color(0xFF1B212A) else Color(0xFFF1F4F8), RoundedCornerShape(13.dp))
-                        .clickable { onBackClick() },
+                        .clickable { viewModel.onEvent(HandoverPhotoEvent.CancelClicked) },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -183,7 +194,8 @@ fun HandoverPhotoScreen(
                     Text("Hasarları net çek — teslim sonrası anlaşmazlığı önler.", fontSize = 11.5.sp, color = subTextColor, fontWeight = FontWeight.Medium)
                 }
                 Button(
-                    onClick = { if (allTaken) onStartRentalClick(vehicleId) },
+                    onClick = { viewModel.onEvent(HandoverPhotoEvent.StartRentalClicked) },
+                    enabled = allTaken && !state.isStarting,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
@@ -194,11 +206,15 @@ fun HandoverPhotoScreen(
                     ),
                     shape = RoundedCornerShape(18.dp)
                 ) {
-                    Text(
-                        text = if (allTaken) "Kiralamayı Başlat" else "Kiralamayı Başlat · ${4 - takenCount} foto kaldı",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.5.sp
-                    )
+                    if (state.isStarting) {
+                        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                    } else {
+                        Text(
+                            text = if (allTaken) "Kiralamayı Başlat" else "Kiralamayı Başlat · ${4 - takenCount} foto kaldı",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.5.sp
+                        )
+                    }
                 }
             }
         }
@@ -214,64 +230,23 @@ fun HandoverPhotoScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Renault Clio · 34 RNC 022", fontSize = 13.sp, color = subTextColor, fontWeight = FontWeight.SemiBold)
+                Text(state.vehicleLabel ?: "Araç bilgisi yükleniyor…", fontSize = 13.sp, color = subTextColor, fontWeight = FontWeight.SemiBold)
                 Text("$takenCount / 4 çekildi", fontSize = 13.sp, color = Color(0xFF0B6BCB), fontWeight = FontWeight.ExtraBold)
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item { PhotoCard("Ön", frontBitmap, isDark) { currentSide = "Ön"; showPickerDialog = true } }
-                item { PhotoCard("Arka", backBitmap, isDark) { currentSide = "Arka"; showPickerDialog = true } }
-                item { PhotoCard("Sol", leftBitmap, isDark) { currentSide = "Sol"; showPickerDialog = true } }
-                item { PhotoCard("Sağ", rightBitmap, isDark) { currentSide = "Sağ"; showPickerDialog = true } }
-            }
-        }
-    }
-}
-
-@Composable
-fun PhotoCard(label: String, bitmap: Bitmap?, isDark: Boolean, onClick: () -> Unit) {
-    val cardBg = if (isDark) Color(0xFF171C24) else Color.White
-    val borderColor = if (isDark) Color(0xFF2C333D) else Color(0xFFC7D0DB)
-    val isTaken = bitmap != null
-    
-    Box(
-        modifier = Modifier
-            .height(158.dp)
-            .background(if (isTaken) (if (isDark) Color(0xFF11161D) else Color(0xFFE6EBF1)) else cardBg, RoundedCornerShape(18.dp))
-            .then(if (!isTaken) Modifier.border(2.dp, borderColor, RoundedCornerShape(18.dp)) else Modifier)
-            .clip(RoundedCornerShape(18.dp))
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        if (isTaken) {
-            // Render bitmap as background
-            Image(bitmap = bitmap!!.asImageBitmap(), contentDescription = "Photo", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            Box(modifier = Modifier.fillMaxSize().background(Color(0x66000000))) // Darken overlay
-            
-            Box(modifier = Modifier.align(Alignment.TopStart).padding(8.dp).background(if(isDark) Color.Black else Color(0xFF101620), RoundedCornerShape(7.dp)).padding(horizontal = 9.dp, vertical = 3.dp)) {
-                Text(label, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-            Box(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(24.dp).background(Color(0xFF1FB370), CircleShape), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Check, contentDescription = "Done", tint = Color.White, modifier = Modifier.size(16.dp))
-            }
-        } else {
-            Box(modifier = Modifier.align(Alignment.TopStart).padding(8.dp).background(if(isDark) Color(0xFF222A33) else Color(0xFFEEF1F5), RoundedCornerShape(7.dp)).padding(horizontal = 9.dp, vertical = 3.dp)) {
-                Text(label, color = if(isDark) Color(0xFF98A2B0) else Color(0xFF5C6675), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(modifier = Modifier.size(46.dp).background(Color(0xFF0B6BCB), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = "Camera", tint = Color.White, modifier = Modifier.size(22.dp))
-                }
-                Spacer(modifier = Modifier.height(9.dp))
-                Text("Ekle / Çek", fontSize = 12.sp, color = if(isDark) Color(0xFF98A2B0) else Color(0xFF5C6675), fontWeight = FontWeight.Bold)
-            }
+            PhotoCaptureGrid(
+                sides = RentalPhotoSide.values().toList(),
+                photos = state.photos,
+                label = { it.label() },
+                isDark = isDark,
+                onSideClick = { side ->
+                    currentSide = side
+                    showPickerDialog = true
+                },
+                modifier = Modifier.padding(horizontal = 18.dp)
+            )
         }
     }
 }

@@ -31,11 +31,14 @@ sealed interface Screen {
     data class ReservationConfirmation(val vehicleId: String) : Screen
 
     @Serializable
-    data class HandoverPhoto(val vehicleId: String) : Screen
+    data class HandoverPhoto(val rentalId: String) : Screen
 
     @Serializable
-    data class ActiveRental(val vehicleId: String) : Screen
-    
+    data class ActiveRental(val rentalId: String) : Screen
+
     @Serializable
-    data class PaymentSummary(val vehicleId: String) : Screen
+    data class ReturnPhoto(val rentalId: String) : Screen
+
+    @Serializable
+    data class PaymentSummary(val rentalId: String) : Screen
 }

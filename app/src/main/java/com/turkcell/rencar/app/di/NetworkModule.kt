@@ -19,7 +19,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://rencar.halitkalayci.com/"
+    private const val BASE_URL = "https://rencarv2.halitkalayci.com/"
 
     @Provides
     @Singleton
@@ -81,5 +81,23 @@ object NetworkModule {
     @Singleton
     fun provideRentalApi(retrofit: Retrofit): com.turkcell.rencar.feature.rentals.data.remote.RentalApi {
         return retrofit.create(com.turkcell.rencar.feature.rentals.data.remote.RentalApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReservationApi(retrofit: Retrofit): com.turkcell.rencar.feature.reservations.data.remote.ReservationApi {
+        return retrofit.create(com.turkcell.rencar.feature.reservations.data.remote.ReservationApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWalletApi(retrofit: Retrofit): com.turkcell.rencar.feature.wallet.data.remote.WalletApi {
+        return retrofit.create(com.turkcell.rencar.feature.wallet.data.remote.WalletApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCardsApi(retrofit: Retrofit): com.turkcell.rencar.feature.wallet.data.remote.CardsApi {
+        return retrofit.create(com.turkcell.rencar.feature.wallet.data.remote.CardsApi::class.java)
     }
 }

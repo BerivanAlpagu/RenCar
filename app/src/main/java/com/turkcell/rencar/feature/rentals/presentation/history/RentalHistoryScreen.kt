@@ -155,13 +155,13 @@ fun RentalHistoryItem(
                     verticalAlignment = Alignment.Top
                 ) {
                     Text(
-                        text = "${rental.vehicleBrand} ${rental.vehicleModel}",
+                        text = "${rental.vehicle.brand} ${rental.vehicle.model}",
                         fontSize = 15.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (isDark) Color(0xFFF3F6FA) else Color(0xFF101620)
                     )
-                    
-                    val formattedPrice = String.format(Locale("tr", "TR"), "%.2f", rental.totalPrice)
+
+                    val formattedPrice = String.format(Locale("tr", "TR"), "%.2f", rental.totalPrice ?: 0.0)
                     Text(
                         text = "₺$formattedPrice",
                         fontSize = 15.sp,
@@ -174,7 +174,7 @@ fun RentalHistoryItem(
                 
                 // Formatted Date
                 val formatter = DateTimeFormatter.ofPattern("d MMM yyyy · HH:mm", Locale("tr", "TR"))
-                val dateText = rental.endDate.format(formatter)
+                val dateText = (rental.endedAt ?: rental.startedAt ?: rental.createdAt).format(formatter)
                 Text(
                     text = dateText,
                     fontSize = 12.sp,

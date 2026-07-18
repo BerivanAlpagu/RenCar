@@ -1,76 +1,90 @@
 package com.turkcell.rencar.feature.wallet.data.repository
 
+import com.turkcell.rencar.feature.wallet.data.remote.CardsApi
+import com.turkcell.rencar.feature.wallet.data.remote.WalletApi
+import com.turkcell.rencar.feature.wallet.data.remote.dto.CardResponseDto
+import com.turkcell.rencar.feature.wallet.data.remote.dto.TopupDto
+import com.turkcell.rencar.feature.wallet.data.remote.dto.WalletResponseDto
+import com.turkcell.rencar.feature.wallet.data.remote.dto.WalletTransactionDto
 import com.turkcell.rencar.feature.wallet.domain.model.CardType
 import com.turkcell.rencar.feature.wallet.domain.model.PaymentCard
 import com.turkcell.rencar.feature.wallet.domain.model.WalletInfo
 import com.turkcell.rencar.feature.wallet.domain.model.WalletTransaction
 import com.turkcell.rencar.feature.wallet.domain.repository.WalletRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.flow
 import java.time.LocalDateTime
-import java.util.UUID
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class DefaultWalletRepository @Inject constructor() : WalletRepository {
+class DefaultWalletRepository @Inject constructor(
+    private val walletApi: WalletApi,
+    private val cardsApi: CardsApi
+) : WalletRepository {
 
-    private val _walletState = MutableStateFlow(
-        WalletInfo(
-            balance = 340.00,
-            cards = listOf(
-                PaymentCard(
-                    id = "c1",
-                    cardType = CardType.VISA,
-                    lastFour = "4291",
-                    expiryDate = "08/27",
-                    isDefault = true
-                ),
-                PaymentCard(
-                    id = "c2",
-                    cardType = CardType.MASTERCARD,
-                    lastFour = "7740",
-                    expiryDate = "11/26",
-                    isDefault = false
-                )
-            ),
-            transactions = listOf(
-                WalletTransaction(
-                    id = "t1",
-                    title = "Renault Clio kiralama",
-                    dateTime = LocalDateTime.now().withHour(14).withMinute(32),
-                    amount = -110.50
-                ),
-                WalletTransaction(
-                    id = "t2",
-                    title = "Bakiye yükleme",
-                    dateTime = LocalDateTime.now().minusDays(1).withHour(9).withMinute(10),
-                    amount = 200.00
-                )
-            )
-        )
-    )
-
-    override fun getWalletInfoFlow(): Flow<WalletInfo> {
-        return _walletState.asStateFlow()
+    override fun getWalletInfoFlow(): Flow<WalletInfo> = flow {
+        val walletResponse = walletApi.getWallet()
+        val walletBody = walletResponse.body()
+        if (!walletResponse.isSuccessful || walletBody == null) {
+            throw Exception("Cüzdan bilgisi alınamadı: ${walletResponse.code()}")
+        }
+        val cardsResponse = cardsApi.list()
+        val cards = if (cardsResponse.isSuccessful) {
+            cardsResponse.body()?.map { it.toDomain() } ?: emptyList()
+        } else {
+            emptyList()
+        }
+        emit(walletBody.toDomain(cards))
     }
 
     override suspend fun addBalance(amount: Double): Result<Unit> {
-        _walletState.update { current ->
-            val updatedBalance = current.balance + amount
-            val newTransaction = WalletTransaction(
-                id = UUID.randomUUID().toString(),
-                title = "Bakiye yükleme",
-                dateTime = LocalDateTime.now(),
-                amount = amount
-            )
-            current.copy(
-                balance = updatedBalance,
-                transactions = listOf(newTransaction) + current.transactions
-            )
+        return try {
+            val response = walletApi.topup(TopupDto(amount))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Bakiye yüklenemedi: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        return Result.success(Unit)
+    }
+
+    override suspend fun getCards(): Result<List<PaymentCard>> {
+        return try {
+            val response = cardsApi.list()
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!.map { it.toDomain() })
+            } else {
+                Result.failure(Exception("Kartlar alınamadı: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }
+
+private val isoFormatter = DateTimeFormatter.ISO_DATE_TIME
+
+private fun WalletTransactionDto.toDomain() = WalletTransaction(
+    id = id,
+    title = description,
+    dateTime = runCatching { LocalDateTime.parse(createdAt, isoFormatter) }.getOrDefault(LocalDateTime.now()),
+    amount = amount
+)
+
+private fun WalletResponseDto.toDomain(cards: List<PaymentCard>) = WalletInfo(
+    balance = balance,
+    cards = cards,
+    transactions = transactions.map { it.toDomain() }
+)
+
+private fun CardResponseDto.toDomain() = PaymentCard(
+    id = id,
+    cardType = runCatching { CardType.valueOf(brand) }.getOrDefault(CardType.VISA),
+    lastFour = last4,
+    expiryDate = "%02d/%02d".format(expMonth, expYear % 100),
+    isDefault = isDefault
+)

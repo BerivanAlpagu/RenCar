@@ -3,6 +3,9 @@ package com.turkcell.rencar.feature.vehicles.presentation.map
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.rencar.core.location.LocationTracker
+import com.turkcell.rencar.feature.rentals.domain.model.RentalStatus
+import com.turkcell.rencar.feature.rentals.domain.repository.RentalRepository
+import com.turkcell.rencar.feature.reservations.domain.repository.ReservationRepository
 import com.turkcell.rencar.feature.vehicles.domain.usecase.GetAvailableVehiclesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,6 +24,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val getAvailableVehiclesUseCase: GetAvailableVehiclesUseCase,
+    private val reservationRepository: ReservationRepository,
+    private val rentalRepository: RentalRepository,
     private val locationTracker: LocationTracker,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -37,10 +42,12 @@ class MapViewModel @Inject constructor(
                 _state.update { it.copy(hasLocationPermission = true) }
                 fetchLocation()
                 fetchVehicles(null)
+                refreshMyActivity()
             }
             is MapEvent.OnLocationPermissionDenied -> {
                 _state.update { it.copy(hasLocationPermission = false) }
                 fetchVehicles(null) // Still fetch vehicles even without location
+                refreshMyActivity()
             }
             is MapEvent.OnFilterChanged -> {
                 _state.update { it.copy(selectedFilter = event.type) }
@@ -57,6 +64,25 @@ class MapViewModel @Inject constructor(
             }
             is MapEvent.DismissVehicleDetails -> {
                 _state.update { it.copy(selectedVehicle = null) }
+            }
+            is MapEvent.OnReserveClicked -> reserveVehicle(event.vehicleId)
+            is MapEvent.OnUnlockClicked -> {
+                viewModelScope.launch {
+                    _effect.emit(MapEffect.NavigateToUnlock(event.vehicleId))
+                }
+            }
+            is MapEvent.OnResumeRentalClicked -> {
+                val rental = _state.value.activeRental
+                if (rental != null && rental.vehicleId == event.vehicleId) {
+                    viewModelScope.launch {
+                        val effect = if (rental.status == RentalStatus.ACTIVE) {
+                            MapEffect.NavigateToActiveRental(rental.id)
+                        } else {
+                            MapEffect.NavigateToHandoverPhoto(rental.id)
+                        }
+                        _effect.emit(effect)
+                    }
+                }
             }
         }
     }
@@ -84,14 +110,49 @@ class MapViewModel @Inject constructor(
     private fun fetchVehicles(type: String?) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            val result = getAvailableVehiclesUseCase(type)
-            
+            val result = getAvailableVehiclesUseCase(type = type, includeBusy = true)
+
             result.onSuccess { vehicles ->
                 _state.update { it.copy(isLoading = false, vehicles = vehicles) }
             }.onFailure { error ->
                 _state.update { it.copy(isLoading = false, error = error.message) }
                 _effect.emit(MapEffect.ShowError(error.message ?: "Bilinmeyen bir hata oluştu"))
             }
+        }
+    }
+
+    /**
+     * Uygulama kapanıp açıldığında yarım kalan rezervasyon/kiralamayı geri kazandırır.
+     * GET /rentals/active yalnız ACTIVE (başlamış) yolculuğu döner — PREPARING (fotoğraf
+     * adımında yarım kalmış) kiralamayı yakalamak için tüm kiralama geçmişinden aranır.
+     */
+    private fun refreshMyActivity() {
+        viewModelScope.launch {
+            reservationRepository.getActiveReservation()
+                .onSuccess { reservation -> _state.update { it.copy(activeReservation = reservation) } }
+            runCatching { rentalRepository.getRentalHistory() }
+                .onSuccess { rentals ->
+                    val inProgress = rentals.firstOrNull {
+                        it.status == RentalStatus.PREPARING || it.status == RentalStatus.ACTIVE
+                    }
+                    _state.update { it.copy(activeRental = inProgress) }
+                }
+        }
+    }
+
+    private fun reserveVehicle(vehicleId: String) {
+        if (_state.value.isReserving) return
+        viewModelScope.launch {
+            _state.update { it.copy(isReserving = true) }
+            reservationRepository.createReservation(vehicleId)
+                .onSuccess { reservation ->
+                    _state.update { it.copy(isReserving = false, activeReservation = reservation) }
+                    fetchVehicles(_state.value.selectedFilter)
+                }
+                .onFailure { error ->
+                    _state.update { it.copy(isReserving = false) }
+                    _effect.emit(MapEffect.ShowError(error.message ?: "Rezervasyon oluşturulamadı"))
+                }
         }
     }
 }

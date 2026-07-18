@@ -39,7 +39,7 @@ class RentalHistoryViewModel @Inject constructor(
             _state.update { it.copy(isLoading = !isRefreshing) }
             getRentalHistoryUseCase()
                 .onSuccess { rentalsList ->
-                    val totalSpend = rentalsList.sumOf { it.totalPrice }
+                    val totalSpend = rentalsList.sumOf { it.totalPrice ?: 0.0 }
                     _state.update {
                         it.copy(
                             isLoading = false,

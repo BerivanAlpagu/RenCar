@@ -3,8 +3,9 @@ package com.turkcell.rencar.feature.auth.presentation.splash
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.rencar.feature.auth.data.remote.AuthApi
-import com.turkcell.rencar.feature.auth.data.remote.LicenseApi
 import com.turkcell.rencar.feature.auth.data.local.TokenManager
+import com.turkcell.rencar.feature.auth.domain.usecase.AuthDestination
+import com.turkcell.rencar.feature.auth.domain.usecase.ResolvePostAuthDestinationUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,7 @@ import javax.inject.Inject
 class SplashViewModel @Inject constructor(
     private val tokenManager: TokenManager,
     private val authApi: AuthApi,
-    private val licenseApi: LicenseApi
+    private val resolvePostAuthDestinationUseCase: ResolvePostAuthDestinationUseCase
 ) : ViewModel() {
 
     sealed interface SplashState {
@@ -44,12 +45,10 @@ class SplashViewModel @Inject constructor(
                 } else {
                     try {
                         authApi.getMe()
-                        val licenseStatus = runCatching { licenseApi.getStatus() }.getOrNull()
-                        _state.value = when (licenseStatus?.status) {
-                            "APPROVED" -> SplashState.NavigateToHome
-                            "UNDER_REVIEW" -> SplashState.NavigateToLicenseApproval
-                            null, "NOT_SUBMITTED", "REJECTED" -> SplashState.NavigateToLicense
-                            else -> SplashState.NavigateToLicense
+                        _state.value = when (resolvePostAuthDestinationUseCase()) {
+                            AuthDestination.Home -> SplashState.NavigateToHome
+                            AuthDestination.LicenseApproval -> SplashState.NavigateToLicenseApproval
+                            AuthDestination.License -> SplashState.NavigateToLicense
                         }
                     } catch (e: retrofit2.HttpException) {
                         if (e.code() == 401) {

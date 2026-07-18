@@ -60,7 +60,9 @@ import org.maplibre.android.geometry.LatLng
 @Composable
 fun MapScreen(
     viewModel: MapViewModel = hiltViewModel(),
-    onReserveClick: (String) -> Unit = {}
+    onUnlockClick: (String) -> Unit = {},
+    onResumeHandoverClick: (String) -> Unit = {},
+    onResumeActiveRentalClick: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -83,6 +85,21 @@ fun MapScreen(
                 Manifest.permission.ACCESS_COARSE_LOCATION
             )
         )
+    }
+
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is MapEffect.NavigateToUnlock -> onUnlockClick(effect.vehicleId)
+                is MapEffect.NavigateToHandoverPhoto -> onResumeHandoverClick(effect.rentalId)
+                is MapEffect.NavigateToActiveRental -> onResumeActiveRentalClick(effect.rentalId)
+                is MapEffect.ShowError -> {
+                    android.widget.Toast.makeText(context, effect.message, android.widget.Toast.LENGTH_SHORT).show()
+                }
+                else -> {}
+            }
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF3F5F8))) {
@@ -120,9 +137,19 @@ fun MapScreen(
 
         // Bottom Sheet
         if (state.selectedVehicle != null) {
+            val selected = state.selectedVehicle!!
+            val isReservedByMe = state.activeReservation?.vehicleId == selected.id
+            val isMyActiveRental = state.activeRental?.vehicleId == selected.id
             VehicleDetailBottomSheet(
-                vehicle = state.selectedVehicle!!,
-                onReserveClick = { onReserveClick(state.selectedVehicle!!.id) },
+                vehicle = selected,
+                isReservedByMe = isReservedByMe,
+                remainingSeconds = state.activeReservation?.remainingSeconds?.takeIf { isReservedByMe },
+                isReserving = state.isReserving,
+                isMyActiveRental = isMyActiveRental,
+                isActiveRentalStarted = state.activeRental?.status == com.turkcell.rencar.feature.rentals.domain.model.RentalStatus.ACTIVE,
+                onReserveClick = { viewModel.onEvent(MapEvent.OnReserveClicked(selected.id)) },
+                onUnlockClick = { viewModel.onEvent(MapEvent.OnUnlockClicked(selected.id)) },
+                onResumeClick = { viewModel.onEvent(MapEvent.OnResumeRentalClicked(selected.id)) },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         } else {
@@ -179,7 +206,14 @@ fun FloatingBackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 fun VehicleDetailBottomSheet(
     vehicle: Vehicle,
+    isReservedByMe: Boolean = false,
+    remainingSeconds: Long? = null,
+    isReserving: Boolean = false,
+    isMyActiveRental: Boolean = false,
+    isActiveRentalStarted: Boolean = false,
     onReserveClick: () -> Unit = {},
+    onUnlockClick: () -> Unit = {},
+    onResumeClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -209,14 +243,24 @@ fun VehicleDetailBottomSheet(
                 letterSpacing = (-0.4).sp
             )
             Spacer(modifier = Modifier.width(8.dp))
+            val statusLabel = when {
+                isMyActiveRental && isActiveRentalStarted -> "SÜRÜŞÜN AKTİF"
+                isMyActiveRental -> "FOTOĞRAF BEKLİYOR"
+                isReservedByMe -> "REZERVE EDİLDİ"
+                vehicle.status == "AVAILABLE" -> "MÜSAİT"
+                else -> "DOLU"
+            }
+            val statusHighlighted = isMyActiveRental || isReservedByMe || vehicle.status == "AVAILABLE"
+            val statusBg = if (statusHighlighted) Color(0xFFE7F4EC) else Color(0xFFF1F4F8)
+            val statusColor = if (statusHighlighted) Color(0xFF1A9E63) else Color(0xFF5C6675)
             Box(
                 modifier = Modifier
-                    .background(Color(0xFFE7F4EC), RoundedCornerShape(7.dp))
+                    .background(statusBg, RoundedCornerShape(7.dp))
                     .padding(horizontal = 8.dp, vertical = 3.dp)
             ) {
                 Text(
-                    text = "MÜSAİT",
-                    color = Color(0xFF1A9E63),
+                    text = statusLabel,
+                    color = statusColor,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -259,10 +303,10 @@ fun VehicleDetailBottomSheet(
             ) {
                 Text("Yakıt", fontSize = 11.5.sp, color = Color(0xFF5C6675), fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(5.dp))
-                Text("%72", fontSize = 17.sp, color = Color(0xFF101620), fontWeight = FontWeight.ExtraBold)
+                Text("%${vehicle.fuelPercent.toInt()}", fontSize = 17.sp, color = Color(0xFF101620), fontWeight = FontWeight.ExtraBold)
                 Spacer(modifier = Modifier.height(7.dp))
                 Box(modifier = Modifier.fillMaxWidth().height(5.dp).background(Color(0xFFE3E8EF), RoundedCornerShape(2.5.dp))) {
-                    Box(modifier = Modifier.fillMaxWidth(0.72f).fillMaxHeight().background(Color(0xFF1FB370), RoundedCornerShape(2.5.dp)))
+                    Box(modifier = Modifier.fillMaxWidth((vehicle.fuelPercent / 100.0).toFloat().coerceIn(0f, 1f)).fillMaxHeight().background(Color(0xFF1FB370), RoundedCornerShape(2.5.dp)))
                 }
             }
             // Range
@@ -274,9 +318,9 @@ fun VehicleDetailBottomSheet(
             ) {
                 Text("Menzil", fontSize = 11.5.sp, color = Color(0xFF5C6675), fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(5.dp))
-                Text("~480 km", fontSize = 17.sp, color = Color(0xFF101620), fontWeight = FontWeight.ExtraBold)
+                Text("~${vehicle.rangeKm.toInt()} km", fontSize = 17.sp, color = Color(0xFF101620), fontWeight = FontWeight.ExtraBold)
                 Spacer(modifier = Modifier.height(9.dp))
-                Text("Dolu depo", fontSize = 11.sp, color = Color(0xFF8A929E), fontWeight = FontWeight.Medium)
+                Text("Tahmini menzil", fontSize = 11.sp, color = Color(0xFF8A929E), fontWeight = FontWeight.Medium)
             }
         }
 
@@ -294,7 +338,7 @@ fun VehicleDetailBottomSheet(
             ) {
                 Column {
                     Text("Vites", fontSize = 11.sp, color = Color(0xFF8A929E), fontWeight = FontWeight.SemiBold)
-                    Text("Otomatik", fontSize = 13.5.sp, color = Color(0xFF101620), fontWeight = FontWeight.Bold)
+                    Text(if (vehicle.transmission == "AUTOMATIC") "Otomatik" else "Manuel", fontSize = 13.5.sp, color = Color(0xFF101620), fontWeight = FontWeight.Bold)
                 }
             }
             // Seats
@@ -307,7 +351,7 @@ fun VehicleDetailBottomSheet(
             ) {
                 Column {
                     Text("Koltuk", fontSize = 11.sp, color = Color(0xFF8A929E), fontWeight = FontWeight.SemiBold)
-                    Text("5 kişi", fontSize = 13.5.sp, color = Color(0xFF101620), fontWeight = FontWeight.Bold)
+                    Text("${vehicle.seats} kişi", fontSize = 13.5.sp, color = Color(0xFF101620), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -321,7 +365,7 @@ fun VehicleDetailBottomSheet(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.Bottom) {
-                Text("₺${vehicle.pricePerDay / 100.0}", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF101620))
+                Text("₺${vehicle.pricePerMinute}", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF101620))
                 Text(" /dk", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF5C6675), modifier = Modifier.padding(bottom = 2.dp))
             }
             Text("Günlük ₺${vehicle.pricePerDay}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF5C6675))
@@ -329,38 +373,81 @@ fun VehicleDetailBottomSheet(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Buttons
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-            // Reserve
-            Box(
-                modifier = Modifier
-                    .weight(0.4f)
-                    .height(56.dp)
-                    .background(Color.Transparent, RoundedCornerShape(18.dp))
-                    .padding(1.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Button(
-                    onClick = onReserveClick,
-                    modifier = Modifier.fillMaxSize(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = Color(0xFF0B6BCB)),
-                    shape = RoundedCornerShape(18.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.7.dp, Color(0xFF0B6BCB))
-                ) {
-                    Text("Rezerve Et", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                }
-            }
-            // Unlock
+        if (isReservedByMe && remainingSeconds != null) {
+            val minutes = remainingSeconds / 60
+            val seconds = remainingSeconds % 60
+            Text(
+                text = "Rezerve edildi · %d:%02d kaldı".format(minutes, seconds),
+                color = Color(0xFF1A9E63),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+
+        if (isMyActiveRental) {
+            // Zaten kilidi açılmış / süren bir kiralaman var — akışa kaldığın yerden devam et
             Button(
-                onClick = { /* Unlock */ },
+                onClick = onResumeClick,
                 modifier = Modifier
-                    .weight(0.6f)
+                    .fillMaxWidth()
                     .height(56.dp)
                     .shadow(26.dp, RoundedCornerShape(18.dp), spotColor = Color(0x4D0B6BCB)),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0B6BCB)),
                 shape = RoundedCornerShape(18.dp)
             ) {
-                Text("Kilidi Aç", fontWeight = FontWeight.Bold, fontSize = 15.5.sp)
+                Text(
+                    if (isActiveRentalStarted) "Sürüşe Devam Et" else "Fotoğraflara Devam Et",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.5.sp
+                )
+            }
+        } else {
+            val canReserve = !isReservedByMe && vehicle.status == "AVAILABLE"
+            val canUnlock = isReservedByMe
+
+            // Buttons
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+                // Reserve
+                Box(
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .height(56.dp)
+                        .background(Color.Transparent, RoundedCornerShape(18.dp))
+                        .padding(1.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = onReserveClick,
+                        enabled = canReserve && !isReserving,
+                        modifier = Modifier.fillMaxSize(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = Color(0xFF0B6BCB)),
+                        shape = RoundedCornerShape(18.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.7.dp, Color(0xFF0B6BCB))
+                    ) {
+                        if (isReserving) {
+                            CircularProgressIndicator(color = Color(0xFF0B6BCB), strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                        } else {
+                            Text("Rezerve Et", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        }
+                    }
+                }
+                // Unlock
+                Button(
+                    onClick = onUnlockClick,
+                    enabled = canUnlock,
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .height(56.dp)
+                        .shadow(if (canUnlock) 26.dp else 0.dp, RoundedCornerShape(18.dp), spotColor = Color(0x4D0B6BCB)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF0B6BCB),
+                        disabledContainerColor = Color(0xFFE3E8EF)
+                    ),
+                    shape = RoundedCornerShape(18.dp)
+                ) {
+                    Text("Kilidi Aç", fontWeight = FontWeight.Bold, fontSize = 15.5.sp)
+                }
             }
         }
     }
@@ -688,9 +775,10 @@ fun MapLibreView(
         org.maplibre.android.annotations.IconFactory.getInstance(context).fromBitmap(locBitmap)
     }
 
-    val vehicleIcons = remember(state.vehicles) {
+    val vehicleIcons = remember(state.vehicles, state.activeReservation, state.activeRental) {
         state.vehicles.associate { vehicle ->
-            val bitmap = createVehicleMarkerBitmap(context, vehicle)
+            val isMine = vehicle.id == state.activeReservation?.vehicleId || vehicle.id == state.activeRental?.vehicleId
+            val bitmap = createVehicleMarkerBitmap(context, vehicle, isMine)
             val icon = org.maplibre.android.annotations.IconFactory.getInstance(context).fromBitmap(bitmap)
             vehicle.id to icon
         }

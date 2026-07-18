@@ -1,10 +1,7 @@
 package com.turkcell.rencar.feature.rentals.presentation.active
 
-import android.animation.ValueAnimator
-import android.graphics.Color as AndroidColor
-import android.view.animation.LinearInterpolator
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -17,58 +14,51 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import org.maplibre.android.annotations.MarkerOptions
-import org.maplibre.android.annotations.PolylineOptions
-import org.maplibre.android.camera.CameraPosition
-import org.maplibre.android.camera.CameraUpdateFactory
-import org.maplibre.android.geometry.LatLng
-import org.maplibre.android.maps.MapView
-import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.Style
+import java.util.Locale
 
 @Composable
 fun ActiveRentalScreen(
-    vehicleId: String,
+    rentalId: String,
     viewModel: ActiveRentalViewModel,
     onFinishRentalClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val isDark = isSystemInDarkTheme()
+    val context = LocalContext.current
 
-    LaunchedEffect(vehicleId) {
-        viewModel.startRental(vehicleId)
+    LaunchedEffect(rentalId) {
+        viewModel.onEvent(ActiveRentalEvent.ScreenOpened(rentalId))
     }
 
-    if (state.isLoading) {
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is ActiveRentalEffect.NavigateToReturnPhoto -> onFinishRentalClick()
+                is ActiveRentalEffect.ShowError -> {
+                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    if (state.isLoading && state.rental == null) {
         Box(modifier = Modifier.fillMaxSize().background(if (isDark) Color(0xFF0C0F14) else Color(0xFFF3F5F8)), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = Color(0xFF0B6BCB))
         }
@@ -79,11 +69,14 @@ fun ActiveRentalScreen(
     val cardColor = if (isDark) Color(0xFF171C24) else Color(0xFFFFFFFF)
     val textColor = if (isDark) Color(0xFFF3F6FA) else Color(0xFF101620)
     val subTextColor = if (isDark) Color(0xFF98A2B0) else Color(0xFF5C6675)
-    
-    // Simulate time and distance
-    var passedTime by remember { mutableStateOf("00:00:00") }
-    var passedDistance by remember { mutableStateOf("0,0 km") }
-    var totalCost by remember { mutableStateOf("₺15,00") }
+
+    val vehicleLabel = state.rental?.let { "${it.vehicle.brand} ${it.vehicle.model}" } ?: "Araç"
+    val hours = state.elapsedSeconds / 3600
+    val minutes = (state.elapsedSeconds % 3600) / 60
+    val seconds = state.elapsedSeconds % 60
+    val passedTime = String.format(Locale("tr", "TR"), "%02d:%02d:%02d", hours, minutes, seconds)
+    val passedDistance = String.format(Locale("tr", "TR"), "%.1f km", state.distanceKm)
+    val totalCost = String.format(Locale("tr", "TR"), "₺%.2f", state.currentCost)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -94,29 +87,13 @@ fun ActiveRentalScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Map Layer
+            // Backdrop
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 260.dp) // Leave space for bottom card
+                    .padding(bottom = 220.dp)
                     .background(if (isDark) Color(0xFF11161D) else Color(0xFFE6EBF1))
-            ) {
-                ActiveRentalMap(
-                    onProgress = { progress ->
-                        // 10 second simulation progress (0f to 1f)
-                        val totalSeconds = (progress * 24 * 60).toInt() // simulate 24 minutes
-                        val mins = totalSeconds / 60
-                        val secs = totalSeconds % 60
-                        passedTime = String.format("00:%02d:%02d", mins, secs)
-                        
-                        val distance = progress * 12.4f
-                        passedDistance = String.format("%.1f km", distance).replace('.', ',')
-                        
-                        val cost = 15f + (mins * 4.5f)
-                        totalCost = String.format("₺%.2f", cost).replace('.', ',')
-                    }
-                )
-            }
+            )
 
             // Status Badge
             Box(
@@ -131,7 +108,7 @@ fun ActiveRentalScreen(
                     Box(modifier = Modifier.size(8.dp).background(Color(0xFF1FB370), CircleShape))
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
-                        text = "Kiralama aktif · Renault Clio",
+                        text = "Kiralama aktif · $vehicleLabel",
                         color = if (isDark) Color(0xFF101620) else Color.White,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
@@ -193,130 +170,18 @@ fun ActiveRentalScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Buttons
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(54.dp)
-                            .border(1.7.dp, if (isDark) Color(0xFF2A313B) else Color(0xFFE3E8EF), RoundedCornerShape(16.dp))
-                            .clickable { /* Lock/Unlock Action */ },
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Lock, contentDescription = "Lock", tint = textColor, modifier = Modifier.size(19.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Kilitle / Aç", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    }
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(54.dp)
-                            .shadow(24.dp, RoundedCornerShape(16.dp), spotColor = Color(0x4DE5484D))
-                            .background(Color(0xFFE5484D), RoundedCornerShape(16.dp))
-                            .clickable { onFinishRentalClick() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Kiralamayı Bitir", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .shadow(24.dp, RoundedCornerShape(16.dp), spotColor = Color(0x4DE5484D))
+                        .background(Color(0xFFE5484D), RoundedCornerShape(16.dp))
+                        .clickable { viewModel.onEvent(ActiveRentalEvent.FinishClicked) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Kiralamayı Bitir", fontSize = 14.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }
     }
-}
-
-@Composable
-fun ActiveRentalMap(onProgress: (Float) -> Unit) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    val mapView = remember {
-        MapView(context).apply {
-            getMapAsync { mapboxMap ->
-                val isDark = false // You can pass isDark to choose a dark style if you want
-                val styleUrl = if (isDark) "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" else "https://tiles.basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
-                mapboxMap.setStyle(Style.Builder().fromUri(styleUrl)) { style ->
-                    startSimulation(mapboxMap, onProgress)
-                }
-                mapboxMap.uiSettings.isAttributionEnabled = false
-                mapboxMap.uiSettings.isLogoEnabled = false
-            }
-        }
-    }
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_CREATE -> mapView.onCreate(null)
-                Lifecycle.Event.ON_START -> mapView.onStart()
-                Lifecycle.Event.ON_RESUME -> mapView.onResume()
-                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
-                Lifecycle.Event.ON_STOP -> mapView.onStop()
-                Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
-                else -> {}
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
-
-    AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
-}
-
-private fun startSimulation(mapboxMap: MapLibreMap, onProgress: (Float) -> Unit) {
-    val start = LatLng(41.0369, 28.9850) // Taksim
-    val end = LatLng(41.0256, 28.9741)   // Galata
-
-    // Center camera
-    val cameraPos = CameraPosition.Builder()
-        .target(start)
-        .zoom(14.5)
-        .build()
-    mapboxMap.cameraPosition = cameraPos
-
-    // Add marker
-    val marker = mapboxMap.addMarker(
-        MarkerOptions()
-            .position(start)
-            .title("Renault Clio")
-    )
-
-    // Add a polyline to show the path
-    val polyline = mapboxMap.addPolyline(
-        PolylineOptions()
-            .add(start)
-            .color(AndroidColor.parseColor("#0B6BCB"))
-            .width(6f)
-    )
-
-    // Animator for 10 seconds
-    val animator = ValueAnimator.ofFloat(0f, 1f)
-    animator.duration = 10000 // 10 seconds
-    animator.interpolator = LinearInterpolator()
-
-    animator.addUpdateListener { animation ->
-        val fraction = animation.animatedFraction
-        
-        // Interpolate position
-        val lat = start.latitude + (end.latitude - start.latitude) * fraction
-        val lng = start.longitude + (end.longitude - start.longitude) * fraction
-        val currentPos = LatLng(lat, lng)
-
-        marker.position = currentPos
-
-        // Update polyline path to leave a trail
-        val currentPoints = polyline.points
-        currentPoints.add(currentPos)
-        polyline.points = currentPoints
-
-        // Keep camera centered on vehicle
-        mapboxMap.moveCamera(CameraUpdateFactory.newLatLng(currentPos))
-        
-        // Callback for UI updates
-        onProgress(fraction)
-    }
-
-    animator.start()
 }

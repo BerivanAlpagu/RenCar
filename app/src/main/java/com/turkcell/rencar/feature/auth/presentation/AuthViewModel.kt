@@ -10,6 +10,8 @@ import com.turkcell.rencar.feature.auth.data.remote.UserRegisterDto
 import com.turkcell.rencar.feature.auth.data.remote.LoginDto
 import com.turkcell.rencar.feature.auth.data.remote.VerifyOtpDto
 import com.turkcell.rencar.feature.auth.data.local.TokenManager
+import com.turkcell.rencar.feature.auth.domain.usecase.AuthDestination
+import com.turkcell.rencar.feature.auth.domain.usecase.ResolvePostAuthDestinationUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -22,12 +24,14 @@ import javax.inject.Inject
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authApi: AuthApi,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val resolvePostAuthDestinationUseCase: ResolvePostAuthDestinationUseCase
 ) : ViewModel() {
 
     sealed interface AuthEvent {
         data class NavigateToOtp(val phone: String) : AuthEvent
         data object NavigateToLicense : AuthEvent
+        data object NavigateToLicenseApproval : AuthEvent
         data object NavigateToHome : AuthEvent
         data object NavigateToOnboarding : AuthEvent
         data class ShowError(val message: String) : AuthEvent
@@ -122,7 +126,12 @@ class AuthViewModel @Inject constructor(
                 val response = authApi.verifyOtp(VerifyOtpDto(phone = formattedPhone, code = code))
                 tokenManager.saveTokens(response.accessToken, response.refreshToken)
                 isLoading = false
-                _events.emit(AuthEvent.NavigateToLicense)
+                val event = when (resolvePostAuthDestinationUseCase()) {
+                    AuthDestination.Home -> AuthEvent.NavigateToHome
+                    AuthDestination.LicenseApproval -> AuthEvent.NavigateToLicenseApproval
+                    AuthDestination.License -> AuthEvent.NavigateToLicense
+                }
+                _events.emit(event)
             } catch (e: Exception) {
                 isLoading = false
                 val errorMsg = e.localizedMessage ?: "Doğrulama kodu geçersiz veya süresi dolmuş."

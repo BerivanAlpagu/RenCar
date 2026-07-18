@@ -10,15 +10,15 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import com.turkcell.rencar.feature.vehicles.domain.model.Vehicle
 
-fun createVehicleMarkerBitmap(context: Context, vehicle: Vehicle): Bitmap {
+fun createVehicleMarkerBitmap(context: Context, vehicle: Vehicle, isMine: Boolean = false): Bitmap {
     val priceText = "₺${vehicle.pricePerDay}"
-    
-    val colorInt = when (vehicle.type) {
-        "HATCHBACK" -> Color.parseColor("#1FB370") // Green for Hatchback (as per some UI logic) or maybe Orange. Let's use Orange for Ekonomik, Purple for Konfor, Yellow for SUV.
-        // In the HTML, Ekonomik (Orange) -> Hatchback/Sedan? Let's use Orange for HATCHBACK
-        "SEDAN" -> Color.parseColor("#7C5CE6") // Purple for SEDAN
-        "SUV" -> Color.parseColor("#E6A700") // Yellow for SUV
-        else -> Color.parseColor("#1FB370") // Green for others
+
+    val colorInt = when {
+        isMine -> Color.parseColor("#0B6BCB") // Kullanıcının kendi rezervasyonu/kiralaması — vurgulu mavi
+        vehicle.status != "AVAILABLE" -> Color.parseColor("#9AA3AE") // RESERVED/RENTED (başkasına ait) — gri
+        vehicle.type == "SEDAN" -> Color.parseColor("#7C5CE6") // Purple for SEDAN
+        vehicle.type == "SUV" -> Color.parseColor("#E6A700") // Yellow for SUV
+        else -> Color.parseColor("#1FB370") // Green for others (HATCHBACK vb.)
     }
 
     val scale = context.resources.displayMetrics.density

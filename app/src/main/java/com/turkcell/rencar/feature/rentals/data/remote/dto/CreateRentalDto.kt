@@ -5,5 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class CreateRentalDto(
     val vehicleId: String,
-    val endDate: String
+    val plan: String,
+    val endDate: String? = null
 )

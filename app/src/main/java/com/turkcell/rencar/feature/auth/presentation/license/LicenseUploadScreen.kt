@@ -1,7 +1,6 @@
 package com.turkcell.rencar.feature.auth.presentation.license
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -47,9 +46,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.io.ByteArrayOutputStream
+import com.turkcell.rencar.core.ui.toLocalFile
 import java.io.File
-import java.io.FileOutputStream
 
 @Composable
 fun LicenseUploadScreen(
@@ -60,8 +58,8 @@ fun LicenseUploadScreen(
     val context = LocalContext.current
     val isDark = isSystemInDarkTheme()
 
-    var frontPath by remember { mutableStateOf<String?>(null) }
-    var backPath by remember { mutableStateOf<String?>(null) }
+    var frontFile by remember { mutableStateOf<File?>(null) }
+    var backFile by remember { mutableStateOf<File?>(null) }
     var isUploading by remember { mutableStateOf(false) }
     var activeSide by remember { mutableStateOf<String?>(null) }
 
@@ -74,8 +72,8 @@ fun LicenseUploadScreen(
     ) { bitmap: Bitmap? ->
         val target = activeSide ?: return@rememberLauncherForActivityResult
         if (bitmap != null) {
-            val path = bitmap.toLocalFile(context, "license_$target")
-            if (target == "front") frontPath = path else backPath = path
+            val file = bitmap.toLocalFile(context, "license_$target")
+            if (target == "front") frontFile = file else backFile = file
         }
     }
 
@@ -84,8 +82,8 @@ fun LicenseUploadScreen(
     ) { uri: Uri? ->
         val target = activeSide ?: return@rememberLauncherForActivityResult
         if (uri != null) {
-            val path = uri.toLocalFile(context, "license_$target")
-            if (target == "front") frontPath = path else backPath = path
+            val file = uri.toLocalFile(context, "license_$target")
+            if (target == "front") frontFile = file else backFile = file
         }
     }
 
@@ -140,7 +138,7 @@ fun LicenseUploadScreen(
                 SectionTitle("Ehliyet ön yüz", textPrimary)
                 PickerCard(
                     isDark = isDark,
-                    hasFile = frontPath != null,
+                    hasFile = frontFile != null,
                     title = "Ön yüzü çek veya yükle",
                     borderColor = borderColor,
                     cardBg = cardBg,
@@ -160,7 +158,7 @@ fun LicenseUploadScreen(
                 SectionTitle("Ehliyet arka yüz", textPrimary)
                 PickerCard(
                     isDark = isDark,
-                    hasFile = backPath != null,
+                    hasFile = backFile != null,
                     title = "Arka yüzü çek veya yükle",
                     borderColor = borderColor,
                     cardBg = cardBg,
@@ -192,8 +190,8 @@ fun LicenseUploadScreen(
                 onClick = {
                     isUploading = true
                     viewModel.upload(
-                        frontPath = frontPath,
-                        backPath = backPath,
+                        frontFile = frontFile,
+                        backFile = backFile,
                         onSuccess = {
                             isUploading = false
                             onGoToApproval()
@@ -438,28 +436,4 @@ private fun BottomAction(
             }
         }
     }
-}
-
-private fun Bitmap.toLocalFile(context: android.content.Context, prefix: String): String? {
-    return runCatching {
-        val file = File.createTempFile(prefix, ".jpg", context.cacheDir)
-        ByteArrayOutputStream().use { stream ->
-            compress(Bitmap.CompressFormat.JPEG, 90, stream)
-            FileOutputStream(file).use { output -> output.write(stream.toByteArray()) }
-        }
-        file.absolutePath
-    }.getOrNull()
-}
-
-private fun Uri.toLocalFile(context: android.content.Context, prefix: String): String? {
-    return runCatching {
-        val input = context.contentResolver.openInputStream(this) ?: return null
-        val bitmap = BitmapFactory.decodeStream(input) ?: return null
-        val file = File.createTempFile(prefix, ".jpg", context.cacheDir)
-        ByteArrayOutputStream().use { stream ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
-            FileOutputStream(file).use { output -> output.write(stream.toByteArray()) }
-        }
-        file.absolutePath
-    }.getOrNull()
 }

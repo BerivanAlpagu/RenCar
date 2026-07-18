@@ -94,7 +94,14 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate(Screen.Otp(event.phone))
                             }
                             is AuthViewModel.AuthEvent.NavigateToLicense -> {
-                                navController.navigate(Screen.License)
+                                navController.navigate(Screen.License) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                            is AuthViewModel.AuthEvent.NavigateToLicenseApproval -> {
+                                navController.navigate(Screen.LicenseApproval) {
+                                    popUpTo(0) { inclusive = true }
+                                }
                             }
                             is AuthViewModel.AuthEvent.NavigateToHome -> {
                                 navController.navigate(Screen.Home) {
@@ -238,8 +245,8 @@ class MainActivity : ComponentActivity() {
                         com.turkcell.rencar.feature.rentals.presentation.reservation.ReservationConfirmationScreen(
                             vehicleId = route.vehicleId,
                             onBackClick = { navController.navigateUp() },
-                            onConfirmClick = { vehicleId ->
-                                navController.navigate(Screen.HandoverPhoto(vehicleId)) {
+                            onUnlocked = { rentalId ->
+                                navController.navigate(Screen.HandoverPhoto(rentalId)) {
                                     popUpTo(Screen.ReservationConfirmation::class) { inclusive = true }
                                 }
                             }
@@ -249,10 +256,14 @@ class MainActivity : ComponentActivity() {
                     composable<Screen.HandoverPhoto> { backStackEntry ->
                         val route = backStackEntry.toRoute<Screen.HandoverPhoto>()
                         com.turkcell.rencar.feature.rentals.presentation.handover.HandoverPhotoScreen(
-                            vehicleId = route.vehicleId,
-                            onBackClick = { navController.navigateUp() },
-                            onStartRentalClick = { vehicleId ->
-                                navController.navigate(Screen.ActiveRental(vehicleId)) {
+                            rentalId = route.rentalId,
+                            onBackClick = {
+                                navController.navigate(Screen.Home) {
+                                    popUpTo(Screen.Home) { inclusive = true }
+                                }
+                            },
+                            onStartRentalClick = { rentalId ->
+                                navController.navigate(Screen.ActiveRental(rentalId)) {
                                     popUpTo(Screen.Home) { inclusive = false } // Keep Home in stack, remove Handover
                                 }
                             }
@@ -263,16 +274,31 @@ class MainActivity : ComponentActivity() {
                         val route = backStackEntry.toRoute<Screen.ActiveRental>()
                         val activeRentalViewModel = androidx.hilt.navigation.compose.hiltViewModel<com.turkcell.rencar.feature.rentals.presentation.active.ActiveRentalViewModel>()
                         com.turkcell.rencar.feature.rentals.presentation.active.ActiveRentalScreen(
-                            vehicleId = route.vehicleId,
+                            rentalId = route.rentalId,
                             viewModel = activeRentalViewModel,
                             onFinishRentalClick = {
-                                navController.navigate(Screen.PaymentSummary(route.vehicleId))
+                                navController.navigate(Screen.ReturnPhoto(route.rentalId))
                             }
                         )
                     }
 
-                    composable<Screen.PaymentSummary> {
+                    composable<Screen.ReturnPhoto> { backStackEntry ->
+                        val route = backStackEntry.toRoute<Screen.ReturnPhoto>()
+                        com.turkcell.rencar.feature.rentals.presentation.returnphoto.ReturnPhotoScreen(
+                            rentalId = route.rentalId,
+                            onBackClick = { navController.navigateUp() },
+                            onFinishConfirmed = { rentalId ->
+                                navController.navigate(Screen.PaymentSummary(rentalId)) {
+                                    popUpTo(Screen.ReturnPhoto::class) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
+                    composable<Screen.PaymentSummary> { backStackEntry ->
+                        val route = backStackEntry.toRoute<Screen.PaymentSummary>()
                         com.turkcell.rencar.feature.rentals.presentation.payment.PaymentSummaryScreen(
+                            rentalId = route.rentalId,
                             onPayClick = {
                                 navController.navigate(Screen.Home) {
                                     popUpTo(Screen.Home) { inclusive = true }
@@ -317,8 +343,14 @@ fun HomeScreen(onLogoutClick: () -> Unit, navController: androidx.navigation.Nav
         ) {
             when (selectedTab) {
                 "Harita" -> MapScreen(
-                    onReserveClick = { vehicleId ->
+                    onUnlockClick = { vehicleId ->
                         navController.navigate(Screen.ReservationConfirmation(vehicleId))
+                    },
+                    onResumeHandoverClick = { rentalId ->
+                        navController.navigate(Screen.HandoverPhoto(rentalId))
+                    },
+                    onResumeActiveRentalClick = { rentalId ->
+                        navController.navigate(Screen.ActiveRental(rentalId))
                     }
                 )
                 "Geçmiş" -> RentalHistoryScreen()
