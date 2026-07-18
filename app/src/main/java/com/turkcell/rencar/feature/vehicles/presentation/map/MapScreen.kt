@@ -150,6 +150,9 @@ fun MapScreen(
                 onReserveClick = { viewModel.onEvent(MapEvent.OnReserveClicked(selected.id)) },
                 onUnlockClick = { viewModel.onEvent(MapEvent.OnUnlockClicked(selected.id)) },
                 onResumeClick = { viewModel.onEvent(MapEvent.OnResumeRentalClicked(selected.id)) },
+                onCancelReservationClick = {
+                    state.activeReservation?.let { viewModel.onEvent(MapEvent.OnCancelReservationClicked(it.id)) }
+                },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         } else {
@@ -214,6 +217,7 @@ fun VehicleDetailBottomSheet(
     onReserveClick: () -> Unit = {},
     onUnlockClick: () -> Unit = {},
     onResumeClick: () -> Unit = {},
+    onCancelReservationClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -376,12 +380,25 @@ fun VehicleDetailBottomSheet(
         if (isReservedByMe && remainingSeconds != null) {
             val minutes = remainingSeconds / 60
             val seconds = remainingSeconds % 60
-            Text(
-                text = "Rezerve edildi · %d:%02d kaldı".format(minutes, seconds),
-                color = Color(0xFF1A9E63),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Rezerve edildi · %d:%02d kaldı".format(minutes, seconds),
+                    color = Color(0xFF1A9E63),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Rezervasyonu iptal et",
+                    color = Color(0xFFE5484D),
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onCancelReservationClick() }
+                )
+            }
             Spacer(modifier = Modifier.height(10.dp))
         }
 

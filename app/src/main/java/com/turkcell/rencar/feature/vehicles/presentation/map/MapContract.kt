@@ -30,6 +30,7 @@ sealed interface MapEvent {
     data class OnReserveClicked(val vehicleId: String) : MapEvent
     data class OnUnlockClicked(val vehicleId: String) : MapEvent
     data class OnResumeRentalClicked(val vehicleId: String) : MapEvent
+    data class OnCancelReservationClicked(val reservationId: String) : MapEvent
 }
 
 sealed interface MapEffect {

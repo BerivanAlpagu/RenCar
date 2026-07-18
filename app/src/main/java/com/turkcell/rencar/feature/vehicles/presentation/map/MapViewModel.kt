@@ -84,6 +84,7 @@ class MapViewModel @Inject constructor(
                     }
                 }
             }
+            is MapEvent.OnCancelReservationClicked -> cancelReservation(event.reservationId)
         }
     }
 
@@ -152,6 +153,19 @@ class MapViewModel @Inject constructor(
                 .onFailure { error ->
                     _state.update { it.copy(isReserving = false) }
                     _effect.emit(MapEffect.ShowError(error.message ?: "Rezervasyon oluşturulamadı"))
+                }
+        }
+    }
+
+    private fun cancelReservation(reservationId: String) {
+        viewModelScope.launch {
+            reservationRepository.cancelReservation(reservationId)
+                .onSuccess {
+                    _state.update { it.copy(activeReservation = null, selectedVehicle = null) }
+                    fetchVehicles(_state.value.selectedFilter)
+                }
+                .onFailure { error ->
+                    _effect.emit(MapEffect.ShowError(error.message ?: "Rezervasyon iptal edilemedi"))
                 }
         }
     }
