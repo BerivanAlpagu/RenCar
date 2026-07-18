@@ -7,6 +7,7 @@ import com.turkcell.rencar.feature.rentals.data.remote.dto.PayRentalDto
 import com.turkcell.rencar.feature.rentals.data.remote.dto.PayRentalResponseDto
 import com.turkcell.rencar.feature.rentals.data.remote.dto.RentalPhotosStateDto
 import com.turkcell.rencar.feature.rentals.data.remote.dto.RentalResponseDto
+import com.turkcell.rencar.feature.rentals.data.remote.dto.RentalStatsResponseDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -17,6 +18,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface RentalApi {
     @POST("rentals")
@@ -24,6 +26,9 @@ interface RentalApi {
 
     @GET("rentals")
     suspend fun listMine(): Response<List<RentalResponseDto>>
+
+    @GET("rentals/stats")
+    suspend fun getStats(@Query("month") month: String? = null): Response<RentalStatsResponseDto>
 
     @GET("rentals/active")
     suspend fun getActive(): Response<ActiveRentalResponseDto>

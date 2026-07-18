@@ -66,6 +66,7 @@ import com.turkcell.rencar.feature.auth.presentation.onboarding.OnboardingScreen
 import com.turkcell.rencar.feature.auth.presentation.otp.OtpVerificationScreen
 import com.turkcell.rencar.feature.auth.presentation.register.RegisterScreen
 import com.turkcell.rencar.feature.auth.presentation.splash.SplashViewModel
+import com.turkcell.rencar.feature.profile.presentation.ProfileScreen
 import com.turkcell.rencar.feature.rentals.presentation.history.RentalHistoryScreen
 import com.turkcell.rencar.feature.vehicles.presentation.map.MapScreen
 import com.turkcell.rencar.feature.wallet.presentation.wallet.WalletScreen
@@ -355,7 +356,7 @@ fun HomeScreen(onLogoutClick: () -> Unit, navController: androidx.navigation.Nav
                 )
                 "Geçmiş" -> RentalHistoryScreen()
                 "Cüzdan" -> WalletScreen()
-                "Profil" -> ProfileTab(onLogoutClick = onLogoutClick, isDark = isDark)
+                "Profil" -> ProfileScreen(onLogoutClick = onLogoutClick)
             }
         }
     }

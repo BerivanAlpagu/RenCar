@@ -32,3 +32,12 @@ data class RentalResponseDto(
     val discountAmount: Double = 0.0,
     val createdAt: String
 )
+
+@Serializable
+data class RentalStatsResponseDto(
+    val month: String,
+    val tripCount: Int,
+    val totalSpent: Double,
+    val totalMinutes: Int,
+    val totalKm: Double
+)

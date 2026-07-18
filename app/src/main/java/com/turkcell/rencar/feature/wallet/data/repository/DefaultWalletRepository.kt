@@ -3,6 +3,7 @@ package com.turkcell.rencar.feature.wallet.data.repository
 import com.turkcell.rencar.feature.wallet.data.remote.CardsApi
 import com.turkcell.rencar.feature.wallet.data.remote.WalletApi
 import com.turkcell.rencar.feature.wallet.data.remote.dto.CardResponseDto
+import com.turkcell.rencar.feature.wallet.data.remote.dto.CreateCardDto
 import com.turkcell.rencar.feature.wallet.data.remote.dto.TopupDto
 import com.turkcell.rencar.feature.wallet.data.remote.dto.WalletResponseDto
 import com.turkcell.rencar.feature.wallet.data.remote.dto.WalletTransactionDto
@@ -59,6 +60,31 @@ class DefaultWalletRepository @Inject constructor(
                 Result.success(response.body()!!.map { it.toDomain() })
             } else {
                 Result.failure(Exception("Kartlar alınamadı: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun addCard(
+        brand: String,
+        last4: String,
+        expMonth: Int,
+        expYear: Int
+    ): Result<PaymentCard> {
+        return try {
+            val response = cardsApi.create(
+                CreateCardDto(
+                    brand = brand,
+                    last4 = last4,
+                    expMonth = expMonth,
+                    expYear = expYear
+                )
+            )
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!.toDomain())
+            } else {
+                Result.failure(Exception("Kart eklenemedi: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

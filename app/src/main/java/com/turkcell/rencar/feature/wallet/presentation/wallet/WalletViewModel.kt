@@ -3,6 +3,7 @@ package com.turkcell.rencar.feature.wallet.presentation.wallet
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.rencar.feature.wallet.domain.usecase.AddBalanceUseCase
+import com.turkcell.rencar.feature.wallet.domain.usecase.AddCardUseCase
 import com.turkcell.rencar.feature.wallet.domain.usecase.GetWalletInfoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class WalletViewModel @Inject constructor(
     private val getWalletInfoUseCase: GetWalletInfoUseCase,
-    private val addBalanceUseCase: AddBalanceUseCase
+    private val addBalanceUseCase: AddBalanceUseCase,
+    private val addCardUseCase: AddCardUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(WalletState())
@@ -39,6 +41,18 @@ class WalletViewModel @Inject constructor(
                 _state.update { it.copy(showAddBalanceSheet = false) }
             }
             is WalletEvent.AddBalanceClicked -> addBalance(event.amount)
+            is WalletEvent.AddCardButtonClicked -> {
+                _state.update { it.copy(showAddCardSheet = true) }
+            }
+            is WalletEvent.DismissAddCardSheet -> {
+                _state.update { it.copy(showAddCardSheet = false) }
+            }
+            is WalletEvent.AddCardClicked -> addCard(
+                brand = event.brand,
+                last4 = event.last4,
+                expMonth = event.expMonth,
+                expYear = event.expYear
+            )
         }
     }
 
@@ -66,6 +80,22 @@ class WalletViewModel @Inject constructor(
                 }
                 .onFailure { error ->
                     _effect.send(WalletEffect.ShowSnackbar(error.localizedMessage ?: "Yükleme başarısız"))
+                }
+        }
+    }
+
+    private fun addCard(brand: String, last4: String, expMonth: Int, expYear: Int) {
+        viewModelScope.launch {
+            _state.update { it.copy(isAddingCard = true) }
+            addCardUseCase(brand, last4, expMonth, expYear)
+                .onSuccess {
+                    _state.update { it.copy(showAddCardSheet = false, isAddingCard = false) }
+                    _effect.send(WalletEffect.ShowSnackbar("Kart başarıyla eklendi."))
+                    loadWallet()
+                }
+                .onFailure { error ->
+                    _state.update { it.copy(isAddingCard = false) }
+                    _effect.send(WalletEffect.ShowSnackbar(error.localizedMessage ?: "Kart eklenemedi."))
                 }
         }
     }

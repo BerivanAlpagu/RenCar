@@ -8,4 +8,5 @@ interface WalletRepository {
     fun getWalletInfoFlow(): Flow<WalletInfo>
     suspend fun addBalance(amount: Double): Result<Unit>
     suspend fun getCards(): Result<List<PaymentCard>>
+    suspend fun addCard(brand: String, last4: String, expMonth: Int, expYear: Int): Result<PaymentCard>
 }

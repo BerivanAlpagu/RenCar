@@ -127,7 +127,7 @@ fun WalletScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDark) Color(0xFF4C95F0) else Color(0xFF0B6BCB),
                                 modifier = Modifier.clickable {
-                                    Toast.makeText(context, "Kart ekleme servisi yapım aşamasındadır", Toast.LENGTH_SHORT).show()
+                                    viewModel.onEvent(WalletEvent.AddCardButtonClicked)
                                 }
                             )
                         }
@@ -187,6 +187,16 @@ fun WalletScreen(
             AddBalanceDialog(
                 onDismiss = { viewModel.onEvent(WalletEvent.DismissAddBalanceSheet) },
                 onConfirm = { amount -> viewModel.onEvent(WalletEvent.AddBalanceClicked(amount)) }
+            )
+        }
+
+        if (state.showAddCardSheet) {
+            AddCardDialog(
+                isLoading = state.isAddingCard,
+                onDismiss = { viewModel.onEvent(WalletEvent.DismissAddCardSheet) },
+                onConfirm = { brand, last4, expMonth, expYear ->
+                    viewModel.onEvent(WalletEvent.AddCardClicked(brand, last4, expMonth, expYear))
+                }
             )
         }
     }
@@ -607,6 +617,139 @@ fun AddBalanceDialog(
             TextButton(
                 onClick = onDismiss
             ) {
+                Text("Vazgeç", fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@Composable
+fun AddCardDialog(
+    isLoading: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (brand: String, last4: String, expMonth: Int, expYear: Int) -> Unit
+) {
+    var brand by remember { mutableStateOf("MASTERCARD") }
+    var last4 by remember { mutableStateOf("") }
+    var expMonth by remember { mutableStateOf("") }
+    var expYear by remember { mutableStateOf("") }
+
+    val monthNumber = expMonth.toIntOrNull()
+    val yearNumber = expYear.toIntOrNull()
+    val isValid = brand.isNotBlank() &&
+        last4.length == 4 &&
+        last4.all { it.isDigit() } &&
+        monthNumber != null &&
+        monthNumber in 1..12 &&
+        yearNumber != null &&
+        yearNumber >= 2026
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text(
+                text = "Kart Ekle",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Kart listesi yalnız marka, son 4 hane ve son kullanma tarihini kaydeder.",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { brand = "VISA" },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (brand == "VISA") Color(0xFF0B6BCB) else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (brand == "VISA") Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("VISA", fontWeight = FontWeight.Bold)
+                    }
+                    Button(
+                        onClick = { brand = "MASTERCARD" },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (brand == "MASTERCARD") Color(0xFF0B6BCB) else MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = if (brand == "MASTERCARD") Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("MC", fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                OutlinedTextField(
+                    value = last4,
+                    onValueChange = { value -> last4 = value.filter { it.isDigit() }.take(4) },
+                    label = { Text("Son 4 hane") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = expMonth,
+                        onValueChange = { value -> expMonth = value.filter { it.isDigit() }.take(2) },
+                        label = { Text("Ay") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = expYear,
+                        onValueChange = { value -> expYear = value.filter { it.isDigit() }.take(4) },
+                        label = { Text("Yıl") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                TextButton(
+                    onClick = {
+                        brand = "MASTERCARD"
+                        last4 = "0008"
+                        expMonth = "12"
+                        expYear = "2030"
+                    }
+                ) {
+                    Text("Test kartını doldur")
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(brand, last4, monthNumber ?: 12, yearNumber ?: 2030) },
+                enabled = isValid && !isLoading,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(18.dp)
+                    )
+                } else {
+                    Text("Ekle", fontWeight = FontWeight.Bold)
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isLoading) {
                 Text("Vazgeç", fontWeight = FontWeight.Bold)
             }
         }
