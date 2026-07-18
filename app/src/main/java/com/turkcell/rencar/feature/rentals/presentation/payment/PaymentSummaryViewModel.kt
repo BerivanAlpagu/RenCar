@@ -37,6 +37,25 @@ class PaymentSummaryViewModel @Inject constructor(
                 _state.update { it.copy(selectedCardId = event.cardId) }
             }
             is PaymentSummaryEvent.PayClicked -> pay()
+            is PaymentSummaryEvent.TopUpButtonClicked -> {
+                _state.update { it.copy(showAddBalanceSheet = true) }
+            }
+            is PaymentSummaryEvent.DismissAddBalanceSheet -> {
+                _state.update { it.copy(showAddBalanceSheet = false) }
+            }
+            is PaymentSummaryEvent.AddBalanceClicked -> topUp(event.amount)
+            is PaymentSummaryEvent.AddCardButtonClicked -> {
+                _state.update { it.copy(showAddCardSheet = true) }
+            }
+            is PaymentSummaryEvent.DismissAddCardSheet -> {
+                _state.update { it.copy(showAddCardSheet = false) }
+            }
+            is PaymentSummaryEvent.AddCardClicked -> addCard(
+                brand = event.brand,
+                last4 = event.last4,
+                expMonth = event.expMonth,
+                expYear = event.expYear
+            )
         }
     }
 
@@ -50,16 +69,56 @@ class PaymentSummaryViewModel @Inject constructor(
                     _state.update { it.copy(isLoading = false, error = error.message) }
                     _effect.send(PaymentSummaryEffect.ShowError(error.message ?: "Kiralama bilgisi alınamadı"))
                 }
+            refreshWallet()
+        }
+    }
 
-            runCatching { walletRepository.getWalletInfoFlow().first() }
-                .onSuccess { info ->
+    /** Wallet sekmesiyle aynı kaynaktan (GET /wallet) beslendiği için bakiye/kart her zaman senkron. */
+    private suspend fun refreshWallet() {
+        runCatching { walletRepository.getWalletInfoFlow().first() }
+            .onSuccess { info ->
+                _state.update { current ->
+                    current.copy(
+                        walletBalance = info.balance,
+                        cards = info.cards,
+                        selectedCardId = current.selectedCardId
+                            ?: info.cards.firstOrNull { card -> card.isDefault }?.id
+                            ?: info.cards.firstOrNull()?.id
+                    )
+                }
+            }
+    }
+
+    private fun topUp(amount: Double) {
+        viewModelScope.launch {
+            _state.update { it.copy(isToppingUp = true) }
+            walletRepository.addBalance(amount)
+                .onSuccess {
+                    _state.update { it.copy(isToppingUp = false, showAddBalanceSheet = false) }
+                    refreshWallet()
+                    _effect.send(PaymentSummaryEffect.ShowMessage("₺$amount bakiyenize eklendi"))
+                }
+                .onFailure { error ->
+                    _state.update { it.copy(isToppingUp = false) }
+                    _effect.send(PaymentSummaryEffect.ShowError(error.message ?: "Bakiye yüklenemedi"))
+                }
+        }
+    }
+
+    private fun addCard(brand: String, last4: String, expMonth: Int, expYear: Int) {
+        viewModelScope.launch {
+            _state.update { it.copy(isAddingCard = true) }
+            walletRepository.addCard(brand, last4, expMonth, expYear)
+                .onSuccess { newCard ->
                     _state.update {
-                        it.copy(
-                            walletBalance = info.balance,
-                            cards = info.cards,
-                            selectedCardId = info.cards.firstOrNull { card -> card.isDefault }?.id ?: info.cards.firstOrNull()?.id
-                        )
+                        it.copy(isAddingCard = false, showAddCardSheet = false, selectedCardId = newCard.id)
                     }
+                    refreshWallet()
+                    _effect.send(PaymentSummaryEffect.ShowMessage("Kart eklendi"))
+                }
+                .onFailure { error ->
+                    _state.update { it.copy(isAddingCard = false) }
+                    _effect.send(PaymentSummaryEffect.ShowError(error.message ?: "Kart eklenemedi"))
                 }
         }
     }

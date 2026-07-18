@@ -23,13 +23,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,7 +60,9 @@ fun LicenseUploadScreen(
 
     var frontFile by remember { mutableStateOf<File?>(null) }
     var backFile by remember { mutableStateOf<File?>(null) }
+    var selfieFile by remember { mutableStateOf<File?>(null) }
     var isUploading by remember { mutableStateOf(false) }
+    var uploadError by remember { mutableStateOf<String?>(null) }
     var activeSide by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
@@ -73,7 +75,11 @@ fun LicenseUploadScreen(
         val target = activeSide ?: return@rememberLauncherForActivityResult
         if (bitmap != null) {
             val file = bitmap.toLocalFile(context, "license_$target")
-            if (target == "front") frontFile = file else backFile = file
+            when (target) {
+                "front" -> frontFile = file
+                "back" -> backFile = file
+                "selfie" -> selfieFile = file
+            }
         }
     }
 
@@ -83,7 +89,11 @@ fun LicenseUploadScreen(
         val target = activeSide ?: return@rememberLauncherForActivityResult
         if (uri != null) {
             val file = uri.toLocalFile(context, "license_$target")
-            if (target == "front") frontFile = file else backFile = file
+            when (target) {
+                "front" -> frontFile = file
+                "back" -> backFile = file
+                "selfie" -> selfieFile = file
+            }
         }
     }
 
@@ -94,6 +104,10 @@ fun LicenseUploadScreen(
     val softCard = if (isDark) Color(0xFF14233A) else Color(0xFFEAF2FC)
     val borderColor = if (isDark) Color(0xFF2C333D) else Color(0xFFC7D0DB)
     val buttonBlue = Color(0xFF0B6BCB)
+    val accentGreen = Color(0xFF1FB370)
+
+    val uploadedCount = listOf(frontFile, backFile, selfieFile).count { it != null }
+    val allReady = uploadedCount == 3
 
     Box(
         modifier = Modifier
@@ -123,17 +137,36 @@ fun LicenseUploadScreen(
                     .padding(horizontal = 18.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = when (status) {
-                        "UNDER_REVIEW" -> "Ehliyetin incelemede. Admin onayı bekleniyor."
-                        "REJECTED" -> "Ehliyet reddedildi, dosyayı yeniden yükleyebilirsin."
-                        "APPROVED" -> "Ehliyet onaylandı."
-                        else -> "İlk girişten sonra ehliyetini bir kez yüklemen gerekiyor."
-                    },
-                    color = textSecondary,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = when (status) {
+                            "UNDER_REVIEW" -> "Ehliyetin incelemede. Admin onayı bekleniyor."
+                            "REJECTED" -> "Ehliyet reddedildi, dosyaları yeniden yükleyebilirsin."
+                            "APPROVED" -> "Ehliyet onaylandı."
+                            else -> "İlk girişten sonra ehliyet + selfie'ni bir kez yüklemen gerekiyor."
+                        },
+                        color = textSecondary,
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .background(if (allReady) Color(0xFFE7F4EC) else softCard, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 9.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            "$uploadedCount / 3",
+                            color = if (allReady) accentGreen else buttonBlue,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
 
                 SectionTitle("Ehliyet ön yüz", textPrimary)
                 PickerCard(
@@ -175,6 +208,35 @@ fun LicenseUploadScreen(
                     }
                 )
 
+                SectionTitle("Yüz doğrulama (selfie)", textPrimary)
+                SelfiePickerCard(
+                    isDark = isDark,
+                    hasFile = selfieFile != null,
+                    borderColor = borderColor,
+                    cardBg = cardBg,
+                    softCard = softCard,
+                    accentGreen = accentGreen,
+                    onCameraClick = {
+                        activeSide = "selfie"
+                        cameraLauncher.launch(null)
+                    },
+                    onGalleryClick = {
+                        activeSide = "selfie"
+                        galleryLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+                )
+
+                if (uploadError != null) {
+                    Text(
+                        text = uploadError!!,
+                        color = Color(0xFFE5484D),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
                 InfoCard(
                     isDark = isDark,
                     softCard = softCard,
@@ -187,17 +249,22 @@ fun LicenseUploadScreen(
                 isDark = isDark,
                 buttonBlue = buttonBlue,
                 isUploading = isUploading,
+                enabled = allReady,
+                remainingCount = 3 - uploadedCount,
                 onClick = {
+                    uploadError = null
                     isUploading = true
                     viewModel.upload(
                         frontFile = frontFile,
                         backFile = backFile,
+                        selfieFile = selfieFile,
                         onSuccess = {
                             isUploading = false
                             onGoToApproval()
                         },
-                        onError = {
+                        onError = { message ->
                             isUploading = false
+                            uploadError = message
                         }
                     )
                 }
@@ -314,7 +381,7 @@ private fun PickerCard(
             .height(118.dp)
             .clip(RoundedCornerShape(18.dp))
             .background(cardBg)
-            .border(width = 2.dp, color = borderColor, shape = RoundedCornerShape(18.dp)),
+            .border(width = 2.dp, color = if (hasFile) Color(0xFF1FB370) else borderColor, shape = RoundedCornerShape(18.dp)),
         contentAlignment = Alignment.Center
     ) {
         if (hasFile) {
@@ -326,7 +393,7 @@ private fun PickerCard(
                         .background(if (isDark) Color(0xFF14233A) else Color(0xFFEAF2FC)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("✓", color = Color(0xFF1FB370), fontSize = 22.sp, fontWeight = FontWeight.Black)
+                    Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF1FB370), modifier = Modifier.size(22.dp))
                 }
                 Spacer(modifier = Modifier.height(7.dp))
                 Text("Yüklendi", color = Color(0xFF1FB370), fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -340,7 +407,7 @@ private fun PickerCard(
                         .background(softCard),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("▣", color = Color(0xFF0B6BCB), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = Color(0xFF0B6BCB), modifier = Modifier.size(18.dp))
                 }
                 Text(
                     text = title,
@@ -372,6 +439,81 @@ private fun PickerCard(
                         Spacer(Modifier.size(6.dp))
                         Text("Upload", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Selfie kartı bilinçli olarak dairesel/farklı tasarlandı — ön/arka ehliyet fotoğraflarından
+ * (dikdörtgen belge çekimi) ayrışan, "yüz doğrulama" olduğunu görsel olarak anlatan bir kart.
+ */
+@Composable
+private fun SelfiePickerCard(
+    isDark: Boolean,
+    hasFile: Boolean,
+    borderColor: Color,
+    cardBg: Color,
+    softCard: Color,
+    accentGreen: Color,
+    onCameraClick: () -> Unit,
+    onGalleryClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(cardBg)
+            .border(width = 2.dp, color = if (hasFile) accentGreen else borderColor, shape = RoundedCornerShape(18.dp))
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(if (hasFile) Color(0xFFE7F4EC) else softCard),
+            contentAlignment = Alignment.Center
+        ) {
+            if (hasFile) {
+                Icon(Icons.Default.Check, contentDescription = null, tint = accentGreen, modifier = Modifier.size(28.dp))
+            } else {
+                Icon(Icons.Default.Face, contentDescription = null, tint = Color(0xFF0B6BCB), modifier = Modifier.size(28.dp))
+            }
+        }
+        Spacer(modifier = Modifier.size(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = if (hasFile) "Selfie yüklendi" else "Yüzünü net gösteren bir selfie çek",
+                color = if (hasFile) accentGreen else if (isDark) Color(0xFF98A2B0) else Color(0xFF5C6675),
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(
+                    onClick = onCameraClick,
+                    modifier = Modifier.height(34.dp),
+                    shape = RoundedCornerShape(11.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0B6BCB))
+                ) {
+                    Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.size(6.dp))
+                    Text("Kamera", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                }
+                Button(
+                    onClick = onGalleryClick,
+                    modifier = Modifier.height(34.dp),
+                    shape = RoundedCornerShape(11.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isDark) Color(0xFF222A33) else Color(0xFFE8EEF8),
+                        contentColor = if (isDark) Color(0xFFF3F6FA) else Color(0xFF0B6BCB)
+                    )
+                ) {
+                    Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.size(6.dp))
+                    Text("Upload", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -413,6 +555,8 @@ private fun BottomAction(
     isDark: Boolean,
     buttonBlue: Color,
     isUploading: Boolean,
+    enabled: Boolean,
+    remainingCount: Int,
     onClick: () -> Unit
 ) {
     Column(
@@ -423,16 +567,24 @@ private fun BottomAction(
     ) {
         Button(
             onClick = onClick,
+            enabled = enabled && !isUploading,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(18.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = buttonBlue)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = buttonBlue,
+                disabledContainerColor = if (isDark) Color(0xFF222A33) else Color(0xFFE3E8EF)
+            )
         ) {
             if (isUploading) {
                 CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
             } else {
-                Text("Devam Et", fontSize = 16.5.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = if (enabled) "Devam Et" else "Devam Et · $remainingCount foto kaldı",
+                    fontSize = 16.5.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

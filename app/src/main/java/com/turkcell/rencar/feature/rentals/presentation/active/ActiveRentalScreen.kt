@@ -87,12 +87,13 @@ fun ActiveRentalScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Backdrop
-            Box(
+            // Backdrop — canlı araç konumu (WebSocket)
+            LiveVehicleMap(
+                vehicleLocation = state.vehicleLocation,
+                routePoints = state.routePoints,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = 220.dp)
-                    .background(if (isDark) Color(0xFF11161D) else Color(0xFFE6EBF1))
             )
 
             // Status Badge

@@ -95,4 +95,9 @@ dependencies {
     implementation(libs.maplibre.android)
     implementation(libs.play.services.location)
 
+    // Socket.IO (canlı araç konumu)
+    implementation(libs.socket.io.client) {
+        exclude(group = "org.json", module = "json")
+    }
+
 }

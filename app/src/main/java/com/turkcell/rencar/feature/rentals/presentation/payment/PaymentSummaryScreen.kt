@@ -1,6 +1,7 @@
 package com.turkcell.rencar.feature.rentals.presentation.payment
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -19,7 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,18 +42,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.turkcell.rencar.feature.rentals.domain.model.RentalPaymentMethod
+import com.turkcell.rencar.feature.wallet.presentation.wallet.AddBalanceDialog
+import com.turkcell.rencar.feature.wallet.presentation.wallet.AddCardDialog
 import java.util.Locale
 
 @Composable
 fun PaymentSummaryScreen(
     rentalId: String,
     viewModel: PaymentSummaryViewModel = hiltViewModel(),
-    onPayClick: () -> Unit,
-    onCloseClick: () -> Unit
+    onPayClick: () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+
+    // Ödeme tamamlanmadan bu ekrandan çıkılamaz — sistem geri tuşu/gestu engellenir.
+    BackHandler {
+        Toast.makeText(context, "Ana sayfaya dönmeden önce ödemeyi tamamlamalısınız", Toast.LENGTH_SHORT).show()
+    }
 
     LaunchedEffect(rentalId) {
         viewModel.onEvent(PaymentSummaryEvent.LoadSummary(rentalId))
@@ -64,6 +70,9 @@ fun PaymentSummaryScreen(
             when (effect) {
                 is PaymentSummaryEffect.NavigateHome -> onPayClick()
                 is PaymentSummaryEffect.ShowError -> {
+                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                }
+                is PaymentSummaryEffect.ShowMessage -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
             }
@@ -102,19 +111,7 @@ fun PaymentSummaryScreen(
                     fontWeight = FontWeight.Bold,
                     color = textColor
                 )
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .background(if (isDark) Color(0xFF1B212A) else Color(0xFFF1F4F8), RoundedCornerShape(13.dp))
-                        .clickable { onCloseClick() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
-                        tint = textColor
-                    )
-                }
+                Spacer(modifier = Modifier.size(42.dp))
             }
         },
         bottomBar = {
@@ -265,6 +262,36 @@ fun PaymentSummaryScreen(
                 )
             }
 
+            if (state.selectedMethod == RentalPaymentMethod.WALLET) {
+                Spacer(modifier = Modifier.height(10.dp))
+                val insufficientBalance = (state.walletBalance ?: 0.0) < totalPrice
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (insufficientBalance) {
+                        Text(
+                            "Bakiye yetersiz görünüyor",
+                            fontSize = 12.sp,
+                            color = Color(0xFFE5484D),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    } else {
+                        Spacer(modifier = Modifier)
+                    }
+                    Text(
+                        "+ Bakiye Yükle",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) Color(0xFF4C95F0) else Color(0xFF0B6BCB),
+                        modifier = Modifier.clickable {
+                            viewModel.onEvent(PaymentSummaryEvent.TopUpButtonClicked)
+                        }
+                    )
+                }
+            }
+
             if (state.selectedMethod == RentalPaymentMethod.CARD) {
                 Spacer(modifier = Modifier.height(14.dp))
                 val selectedCard = state.cards.firstOrNull { it.id == state.selectedCardId }
@@ -305,8 +332,35 @@ fun PaymentSummaryScreen(
                         )
                     }
                 }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    "+ Yeni kart ekle",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDark) Color(0xFF4C95F0) else Color(0xFF0B6BCB),
+                    modifier = Modifier.clickable {
+                        viewModel.onEvent(PaymentSummaryEvent.AddCardButtonClicked)
+                    }
+                )
             }
         }
+    }
+
+    if (state.showAddBalanceSheet) {
+        AddBalanceDialog(
+            onDismiss = { viewModel.onEvent(PaymentSummaryEvent.DismissAddBalanceSheet) },
+            onConfirm = { amount -> viewModel.onEvent(PaymentSummaryEvent.AddBalanceClicked(amount)) }
+        )
+    }
+
+    if (state.showAddCardSheet) {
+        AddCardDialog(
+            isLoading = state.isAddingCard,
+            onDismiss = { viewModel.onEvent(PaymentSummaryEvent.DismissAddCardSheet) },
+            onConfirm = { brand, last4, expMonth, expYear ->
+                viewModel.onEvent(PaymentSummaryEvent.AddCardClicked(brand, last4, expMonth, expYear))
+            }
+        )
     }
 }
 

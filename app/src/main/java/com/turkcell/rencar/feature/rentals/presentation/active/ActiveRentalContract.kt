@@ -1,6 +1,7 @@
 package com.turkcell.rencar.feature.rentals.presentation.active
 
 import com.turkcell.rencar.feature.rentals.domain.model.Rental
+import com.turkcell.rencar.feature.rentals.domain.model.VehicleLocation
 
 data class ActiveRentalState(
     val isLoading: Boolean = false,
@@ -9,7 +10,9 @@ data class ActiveRentalState(
     val currentCost: Double = 0.0,
     val distanceKm: Double = 0.0,
     val isFinishing: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val vehicleLocation: VehicleLocation? = null,
+    val routePoints: List<VehicleLocation> = emptyList()
 )
 
 sealed interface ActiveRentalEvent {

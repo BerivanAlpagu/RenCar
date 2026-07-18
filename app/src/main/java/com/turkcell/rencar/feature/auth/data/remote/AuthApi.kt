@@ -57,6 +57,11 @@ data class AuthResponseDto(
     val user: UserResponseDto
 )
 
+@Serializable
+data class RefreshTokenDto(
+    val refreshToken: String
+)
+
 interface AuthApi {
     @GET("health")
     suspend fun checkHealth(): MessageResponseDto
@@ -78,6 +83,16 @@ interface AuthApi {
     suspend fun verifyOtp(
         @Body body: VerifyOtpDto
     ): AuthResponseDto
+
+    /**
+     * Rol DB'den yeniden okunur — ehliyet onayı sırasında (PENDING -> CUSTOMER) elde tutulan
+     * eski access token'ın rolü güncel değildir; onay algılanınca bu uç çağrılıp yeni,
+     * güncel rollü token çifti alınmalıdır.
+     */
+    @POST("auth/refresh")
+    suspend fun refresh(
+        @Body body: RefreshTokenDto
+    ): AuthResponseDto
 }
 
 @Serializable
@@ -86,6 +101,7 @@ data class UploadLicenseResponseDto(
     val status: String,
     val frontImageUrl: String,
     val backImageUrl: String,
+    val selfieImageUrl: String? = null,
     val rejectReason: String? = null,
     val reviewedAt: String? = null,
     val createdAt: String,
@@ -109,6 +125,7 @@ interface LicenseApi {
     @POST("license/upload")
     suspend fun upload(
         @Part front: okhttp3.MultipartBody.Part,
-        @Part back: okhttp3.MultipartBody.Part
+        @Part back: okhttp3.MultipartBody.Part,
+        @Part selfie: okhttp3.MultipartBody.Part
     ): UploadLicenseResponseDto
 }

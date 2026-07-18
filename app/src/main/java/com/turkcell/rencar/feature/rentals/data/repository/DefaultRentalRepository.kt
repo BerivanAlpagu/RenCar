@@ -1,6 +1,7 @@
 package com.turkcell.rencar.feature.rentals.data.repository
 
 import com.turkcell.rencar.feature.rentals.data.remote.RentalApi
+import com.turkcell.rencar.feature.rentals.data.remote.socket.VehicleLocationSocketClient
 import com.turkcell.rencar.feature.rentals.data.remote.dto.ActiveRentalResponseDto
 import com.turkcell.rencar.feature.rentals.data.remote.dto.CreateRentalDto
 import com.turkcell.rencar.feature.rentals.data.remote.dto.FinishRentalResponseDto
@@ -21,7 +22,9 @@ import com.turkcell.rencar.feature.rentals.domain.model.RentalPhotosState
 import com.turkcell.rencar.feature.rentals.domain.model.RentalPlan
 import com.turkcell.rencar.feature.rentals.domain.model.RentalStatus
 import com.turkcell.rencar.feature.rentals.domain.model.RentalVehicleSummary
+import com.turkcell.rencar.feature.rentals.domain.model.VehicleLocation
 import com.turkcell.rencar.feature.rentals.domain.repository.RentalRepository
+import kotlinx.coroutines.flow.Flow
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -32,7 +35,8 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 class DefaultRentalRepository @Inject constructor(
-    private val rentalApi: RentalApi
+    private val rentalApi: RentalApi,
+    private val vehicleLocationSocketClient: VehicleLocationSocketClient
 ) : RentalRepository {
 
     override suspend fun getRentalHistory(): List<Rental> {
@@ -170,6 +174,9 @@ class DefaultRentalRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    override fun observeMyVehicleLocation(): Flow<VehicleLocation> =
+        vehicleLocationSocketClient.observeMyVehicle()
 }
 
 private val isoFormatter = DateTimeFormatter.ISO_DATE_TIME

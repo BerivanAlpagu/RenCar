@@ -9,10 +9,13 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val MAX_ROUTE_POINTS = 500
 
 private const val POLL_INTERVAL_MS = 4000L
 
@@ -28,6 +31,7 @@ class ActiveRentalViewModel @Inject constructor(
     val effect = _effect.receiveAsFlow()
 
     private var pollingJob: Job? = null
+    private var locationJob: Job? = null
 
     fun onEvent(event: ActiveRentalEvent) {
         when (event) {
@@ -48,6 +52,23 @@ class ActiveRentalViewModel @Inject constructor(
                 }
         }
         startPolling()
+        startLocationTracking()
+    }
+
+    private fun startLocationTracking() {
+        locationJob?.cancel()
+        locationJob = viewModelScope.launch {
+            rentalRepository.observeMyVehicleLocation()
+                .catch { /* bağlantı hatasında sessiz kal, REST polling akışı ekranı çalışır durumda tutar */ }
+                .collect { location ->
+                    _state.update { current ->
+                        current.copy(
+                            vehicleLocation = location,
+                            routePoints = (current.routePoints + location).takeLast(MAX_ROUTE_POINTS)
+                        )
+                    }
+                }
+        }
     }
 
     private fun startPolling() {
@@ -75,6 +96,7 @@ class ActiveRentalViewModel @Inject constructor(
     private fun finish() {
         val rentalId = _state.value.rental?.id ?: return
         pollingJob?.cancel()
+        locationJob?.cancel()
         viewModelScope.launch {
             _effect.send(ActiveRentalEffect.NavigateToReturnPhoto(rentalId))
         }
@@ -83,5 +105,6 @@ class ActiveRentalViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         pollingJob?.cancel()
+        locationJob?.cancel()
     }
 }

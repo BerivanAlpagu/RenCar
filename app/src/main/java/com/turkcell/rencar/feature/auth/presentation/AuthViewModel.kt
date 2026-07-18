@@ -34,6 +34,7 @@ class AuthViewModel @Inject constructor(
         data object NavigateToLicenseApproval : AuthEvent
         data object NavigateToHome : AuthEvent
         data object NavigateToOnboarding : AuthEvent
+        data class NavigateToPendingPayment(val rentalId: String) : AuthEvent
         data class ShowError(val message: String) : AuthEvent
     }
 
@@ -126,10 +127,11 @@ class AuthViewModel @Inject constructor(
                 val response = authApi.verifyOtp(VerifyOtpDto(phone = formattedPhone, code = code))
                 tokenManager.saveTokens(response.accessToken, response.refreshToken)
                 isLoading = false
-                val event = when (resolvePostAuthDestinationUseCase()) {
+                val event = when (val destination = resolvePostAuthDestinationUseCase()) {
                     AuthDestination.Home -> AuthEvent.NavigateToHome
                     AuthDestination.LicenseApproval -> AuthEvent.NavigateToLicenseApproval
                     AuthDestination.License -> AuthEvent.NavigateToLicense
+                    is AuthDestination.PendingPayment -> AuthEvent.NavigateToPendingPayment(destination.rentalId)
                 }
                 _events.emit(event)
             } catch (e: Exception) {

@@ -15,7 +15,11 @@ data class PaymentSummaryState(
     val selectedCardId: String? = null,
     val isPaying: Boolean = false,
     val receipt: PaymentReceipt? = null,
-    val error: String? = null
+    val error: String? = null,
+    val showAddBalanceSheet: Boolean = false,
+    val isToppingUp: Boolean = false,
+    val showAddCardSheet: Boolean = false,
+    val isAddingCard: Boolean = false
 )
 
 sealed interface PaymentSummaryEvent {
@@ -23,9 +27,21 @@ sealed interface PaymentSummaryEvent {
     data class MethodSelected(val method: RentalPaymentMethod) : PaymentSummaryEvent
     data class CardSelected(val cardId: String) : PaymentSummaryEvent
     data object PayClicked : PaymentSummaryEvent
+    data object TopUpButtonClicked : PaymentSummaryEvent
+    data object DismissAddBalanceSheet : PaymentSummaryEvent
+    data class AddBalanceClicked(val amount: Double) : PaymentSummaryEvent
+    data object AddCardButtonClicked : PaymentSummaryEvent
+    data object DismissAddCardSheet : PaymentSummaryEvent
+    data class AddCardClicked(
+        val brand: String,
+        val last4: String,
+        val expMonth: Int,
+        val expYear: Int
+    ) : PaymentSummaryEvent
 }
 
 sealed interface PaymentSummaryEffect {
     data object NavigateHome : PaymentSummaryEffect
     data class ShowError(val message: String) : PaymentSummaryEffect
+    data class ShowMessage(val message: String) : PaymentSummaryEffect
 }

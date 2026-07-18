@@ -8,6 +8,8 @@ import com.turkcell.rencar.feature.rentals.domain.model.RentalPaymentMethod
 import com.turkcell.rencar.feature.rentals.domain.model.RentalPhotoSide
 import com.turkcell.rencar.feature.rentals.domain.model.RentalPhotosState
 import com.turkcell.rencar.feature.rentals.domain.model.RentalPlan
+import com.turkcell.rencar.feature.rentals.domain.model.VehicleLocation
+import kotlinx.coroutines.flow.Flow
 import java.io.File
 
 interface RentalRepository {
@@ -26,4 +28,5 @@ interface RentalRepository {
         discountCode: String? = null
     ): Result<PaymentReceipt>
     suspend fun cancelRental(id: String): Result<Unit>
+    fun observeMyVehicleLocation(): Flow<VehicleLocation>
 }

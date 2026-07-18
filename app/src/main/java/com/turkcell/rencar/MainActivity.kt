@@ -114,6 +114,11 @@ class MainActivity : ComponentActivity() {
                                     popUpTo(0) { inclusive = true }
                                 }
                             }
+                            is AuthViewModel.AuthEvent.NavigateToPendingPayment -> {
+                                navController.navigate(Screen.PaymentSummary(event.rentalId)) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
                             is AuthViewModel.AuthEvent.ShowError -> {
                                 Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                             }
@@ -137,7 +142,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         LaunchedEffect(splashState) {
-                            when (splashState) {
+                            when (val currentSplashState = splashState) {
                                 SplashViewModel.SplashState.NavigateToOnboarding -> {
                                     navController.navigate(Screen.Onboarding) {
                                         popUpTo(Screen.Splash) { inclusive = true }
@@ -155,6 +160,11 @@ class MainActivity : ComponentActivity() {
                                 }
                                 SplashViewModel.SplashState.NavigateToHome -> {
                                     navController.navigate(Screen.Home) {
+                                        popUpTo(Screen.Splash) { inclusive = true }
+                                    }
+                                }
+                                is SplashViewModel.SplashState.NavigateToPendingPayment -> {
+                                    navController.navigate(Screen.PaymentSummary(currentSplashState.rentalId)) {
                                         popUpTo(Screen.Splash) { inclusive = true }
                                     }
                                 }
@@ -302,12 +312,7 @@ class MainActivity : ComponentActivity() {
                             rentalId = route.rentalId,
                             onPayClick = {
                                 navController.navigate(Screen.Home) {
-                                    popUpTo(Screen.Home) { inclusive = true }
-                                }
-                            },
-                            onCloseClick = {
-                                navController.navigate(Screen.Home) {
-                                    popUpTo(Screen.Home) { inclusive = true }
+                                    popUpTo(0) { inclusive = true }
                                 }
                             }
                         )

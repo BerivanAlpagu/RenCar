@@ -49,6 +49,10 @@ fun LicenseApprovalScreen(
 
     LaunchedEffect(status) {
         if (status == "APPROVED") {
+            // Access token'daki rol hâlâ PENDING olabilir (JWT üretim anında donuyor) —
+            // Home'a geçmeden önce güncel rollü (CUSTOMER) token'ı alıyoruz, yoksa Home'daki
+            // tüm CUSTOMER uçları 403 döner.
+            viewModel.refreshTokenAfterApproval()
             delay(900)
             onApproved()
         }

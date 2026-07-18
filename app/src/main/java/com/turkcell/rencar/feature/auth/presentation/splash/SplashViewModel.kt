@@ -27,6 +27,7 @@ class SplashViewModel @Inject constructor(
         data object NavigateToLicense : SplashState
         data object NavigateToLicenseApproval : SplashState
         data object NavigateToHome : SplashState
+        data class NavigateToPendingPayment(val rentalId: String) : SplashState
     }
 
     private val _state = MutableStateFlow<SplashState>(SplashState.Loading)
@@ -45,10 +46,11 @@ class SplashViewModel @Inject constructor(
                 } else {
                     try {
                         authApi.getMe()
-                        _state.value = when (resolvePostAuthDestinationUseCase()) {
+                        _state.value = when (val destination = resolvePostAuthDestinationUseCase()) {
                             AuthDestination.Home -> SplashState.NavigateToHome
                             AuthDestination.LicenseApproval -> SplashState.NavigateToLicenseApproval
                             AuthDestination.License -> SplashState.NavigateToLicense
+                            is AuthDestination.PendingPayment -> SplashState.NavigateToPendingPayment(destination.rentalId)
                         }
                     } catch (e: retrofit2.HttpException) {
                         if (e.code() == 401) {

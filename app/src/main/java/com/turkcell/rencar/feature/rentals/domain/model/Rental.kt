@@ -65,3 +65,10 @@ data class PaymentReceipt(
     val paidAmount: Double,
     val walletBalance: Double?
 )
+
+data class VehicleLocation(
+    val vehicleId: String,
+    val latitude: Double,
+    val longitude: Double,
+    val updatedAt: String?
+)
